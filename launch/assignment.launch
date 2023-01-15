@@ -1,0 +1,9 @@
+<launch>
+    <include file="$(find assignment_2_2022)/launch/assignment1.launch" />
+    <arg name="rate" default="2" />
+    <arg name="goal_x" />
+    <arg name="goal_y" />
+    <node pkg="assignment_rt1_2" type="set_goal_node" name="set_goal_node" output="screen" launch-prefix="terminator -x" args="$(arg rate) $(arg goal_x) $(arg goal_y)" />
+    <node pkg="assignment_rt1_2" type="robot_status_node" name="robot_status_node" output="screen" launch-prefix="terminator -x" args="$(arg rate)" />
+    <node pkg="assignment_rt1_2" type="goals_status_node" name="goals_status_node" output="screen" launch-prefix="terminator -x" />
+</launch>

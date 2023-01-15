@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0.2)
-project(assignment2)
+project(assignment_rt1_2)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 # add_compile_options(-std=c++11)
@@ -13,6 +13,7 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
   assignment_2_2022
+  message_generation
 )
 
 ## System dependencies are found with CMake's conventions
@@ -49,18 +50,16 @@ find_package(catkin REQUIRED COMPONENTS
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
 ## Generate messages in the 'msg' folder
-# add_message_files(
-#   FILES
-#   Message1.msg
-#   Message2.msg
-# )
+add_message_files(
+  FILES
+  RobotStatus.msg
+)
 
 ## Generate services in the 'srv' folder
-# add_service_files(
-#   FILES
-#   Service1.srv
-#   Service2.srv
-# )
+add_service_files(
+  FILES
+  Goals.srv
+)
 
 ## Generate actions in the 'action' folder
 # add_action_files(
@@ -70,10 +69,10 @@ find_package(catkin REQUIRED COMPONENTS
 # )
 
 ## Generate added messages and services with any dependencies listed here
-# generate_messages(
-#   DEPENDENCIES
-#   actionlib_msgs
-# )
+generate_messages(
+  DEPENDENCIES
+  std_msgs
+)
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
@@ -109,6 +108,7 @@ catkin_package(
 #  LIBRARIES assignment2
 #  CATKIN_DEPENDS actionlib actionlib_msgs roscpp rospy
 #  DEPENDS system_lib
+  CATKIN_DEPENDS message_runtime
 )
 
 ###########
@@ -136,6 +136,8 @@ include_directories(
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
 add_executable(set_goal_node src/move_to_goal.cpp)
+add_executable(robot_status_node src/robot_status.cpp)
+add_executable(goals_status_node src/goals_status.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -146,12 +148,19 @@ add_executable(set_goal_node src/move_to_goal.cpp)
 ## Add cmake target dependencies of the executable
 ## same as for the library above
 add_dependencies(set_goal_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(robot_status_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(goals_status_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(set_goal_node
   ${catkin_LIBRARIES}
 )
-
+target_link_libraries(robot_status_node
+  ${catkin_LIBRARIES}
+)
+target_link_libraries(goals_status_node
+  ${catkin_LIBRARIES}
+)
 #############
 ## Install ##
 #############

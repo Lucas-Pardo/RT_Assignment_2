@@ -8,8 +8,7 @@
             "includePath": [
                 "/home/lucas/ros/devel/include/**",
                 "/opt/ros/noetic/include/**",
-                "/home/lucas/ros/src/action_example/include/**",
-                "/home/lucas/ros/src/assignment2/include/**",
+                "/home/lucas/ros/src/assignment_rt1_2/include/**",
                 "/usr/include/**",
                 "/opt/ros/noetic/include",
                 "/home/lucas/ros/devel/include"
