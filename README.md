@@ -12,7 +12,7 @@ The goal of the assignment is to create a standalone ros package based on the [b
 
 * A node (B) implementing a service server that when called prints the number of goals reached and cancelled.
 
-* A node (C) that subscribes to the robot's position and velocity using the custom message publish by node A and prints several stats such as distance to goal and average speed. The frequency at which it prints information can be set by the user.
+* A node (C) that subscribes to the robot's position and velocity using the custom message published by node A and prints several stats such as distance to goal and average speed. The frequency at which it prints information can be set by the user.
 
 * A launch file that starts the whole simulation and sets the different parameters needed.
 
@@ -303,7 +303,7 @@ bool cancelled
 ---
 ```
 
-That would work fine for manual calls and even if node A is closed and opened again, which was our initial concern. However, if the service server (node B) is closed and opened again, the goals will be reset. Without modifying the action server, the only way to save the goals since the beggining of the simulation regardless of whether node A or B have been closed, is through the *parameter server*.
+That would work fine for manual calls, although we would need to send as part of the request whether the last goal was cancelled or not. The important part is that it would work even if node A is closed and opened again, which was our initial concern. However, if the service server (node B) is closed and opened again, the goals will be reset. Without modifying the action server, the only way to save the goals since the beggining of the simulation regardless of whether node A or B have been closed, is through the *parameter server*.
 
 
 ### Node C (robot_status.cpp)
@@ -352,7 +352,7 @@ float acc_vx = 0, acc_vy = 0;
 
 void get_status(const assignment_rt1_2::RobotStatus::ConstPtr &msg) {
     // Check if goal changed:
-    float eps = 1e-3;
+    float eps = 1e-3; // Threshold for the goal change
     if (std::abs(msg->goal_x - goal_x) > eps || std::abs(msg->goal_y - goal_y) > eps) {
         ROS_INFO("Goal change detected, resetting stats.");
         goal_x = msg->goal_x;
@@ -372,7 +372,7 @@ void get_status(const assignment_rt1_2::RobotStatus::ConstPtr &msg) {
 }
 ```
 
-The reason why we also send the goal position in the custom message is to be able to detect if the goal has changed and reset the stats, in this case, the average velocity must be reset. Of course another reason is that we need access to the goal position to compute the distance from the robot to the goal.This way, the node can be run continuously. 
+The reason why we also send the goal position in the custom message is to be able to detect if the goal has changed and reset the stats, in this case, the average velocity must be reset. Of course, another reason is that we need access to the goal position to compute the distance from the robot to the goal. This way, the node can be run continuously. 
 
 Another aspect is that instead of saving every previous velocity in an array, we just save their absolute cumulative sum (`acc_vx`, `acc_vy`) and the number of callbacks (`c`) so that the average speed in either component can be computed as `acc` / `c`.
 
@@ -403,7 +403,7 @@ An interesting fact is that regardless of where the goal is, more than 90% of th
 
 ### Launch file
 
-As stated in the section [How to run the program](#how-to-run-the-program), we provide the launch file `assignment1.launch` in the *launch* folder to start up the whole simulation, including the nodes in the [base package](https://github.com/CarmineD8/assignment_2_2022).
+As stated in the section [How to run the program](#how-to-run-the-program), we provide the launch file `assignment.launch` in the *launch* folder to start up the whole simulation, including the nodes in the [base package](https://github.com/CarmineD8/assignment_2_2022).
 
 ```xml
 <launch>
@@ -423,4 +423,10 @@ As we can see, the first line launches the launch file provided in the [base pac
 
 * **Note:** We use *terminator* terminals to launch the nodes, it can be installed using the command `sudo apt install terminator`. Nevertheless, the terminal used to launch the nodes can also be changed manually, for instance, "terminator -x" can be substituted by "gnome-terminal -x", "konsole -e", "xterm -e" or whatever other terminal. However, in our *WSL* system with Ubuntu 20.04, *konsole* terminal crashes nodes A and C for a reason we have not been able to determine.
 
+## Improvements
 
+* **Error handling:** There is very few error checking and handling in the code, which is not ideal.
+
+* **Wrong input handling:** There are several instances in which the user provide an input to the program and we do not check or handle it properly. For instance, we do not check if the arguments passed (`rate`, `goal_x` and `goal_y`) are numbers, we just assume they are, which will produce errors when converting it from string to float in the case that they are not numbers. Error that we have not handled. The other instance of wrong input is in the [exit routine](#exit-routine) of node A. To retry the user must input the new position of the goal, numbers that we do not check whether they are numbers and would produce the same error as before.
+
+* **Proper exiting:** Only node A has a proper exit routine in which the program finishes and returns zero. The other two nodes are run forever and can only be stopped with signals (`SIGINT`, `SIGTERM`, etc.). Right now the easiest way is to just close the terminal in which they are initialized, which automatically sends signal `SIGHUP` to terminate the node.

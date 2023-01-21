@@ -26,7 +26,7 @@ void print_msg() {
 
 void get_status(const assignment_rt1_2::RobotStatus::ConstPtr &msg) {
     // Check if goal changed:
-    float eps = 1e-3;
+    float eps = 1e-3;  // Threshold for the goal change
     if (std::abs(msg->goal_x - goal_x) > eps || std::abs(msg->goal_y - goal_y) > eps) {
         ROS_INFO("Goal change detected, resetting stats.");
         goal_x = msg->goal_x;

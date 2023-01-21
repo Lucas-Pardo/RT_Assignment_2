@@ -36,7 +36,6 @@ int main (int argc, char **argv) {
     // Subscriber:
     ros::Subscriber sub = nh.subscribe("/odom", 1, get_status);
 
-    // Send goal
     ROS_INFO("Action server started, sending goal.");
     assignment_2_2022::PlanningGoal goal;
     double goal_x, goal_y;
@@ -60,6 +59,7 @@ int main (int argc, char **argv) {
 
     cycle:
 
+    // Send goal
     goal.target_pose.pose.position.x = goal_x;
     goal.target_pose.pose.position.y = goal_y;
     ac.sendGoal(goal);
@@ -128,6 +128,7 @@ int main (int argc, char **argv) {
     assignment_rt1_2::Goals g;
     client.call(g);
 
+    // Exit routine with retry option:
     while (true) {
         std::cout << "Program finished. Write 'r' to retry with another goal or 'e' to exit:" << std::endl;
         std::string buf;
