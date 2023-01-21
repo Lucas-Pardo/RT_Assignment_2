@@ -72,5 +72,6 @@
         "typeinfo": "cpp",
         "variant": "cpp",
         "cerrno": "cpp"
-    }
+    },
+    "ros.distro": "noetic"
 }

@@ -3,6 +3,7 @@
 #include <assignment_2_2022/PlanningAction.h>
 #include <assignment_rt1_2/RobotStatus.h>
 #include <nav_msgs/Odometry.h>
+#include <assignment_rt1_2/Goals.h>
 
 float x, y, vel_x, vel_y;
 
@@ -29,7 +30,7 @@ int main (int argc, char **argv) {
 
     // Publisher:
     ros::Publisher pub;
-    pub = nh.advertise<assignment_rt1_2::RobotStatus>("robot/status", 1);
+    pub = nh.advertise<assignment_rt1_2::RobotStatus>("/robot/status", 1);
     assignment_rt1_2::RobotStatus rs;
 
     // Subscriber:
@@ -87,8 +88,13 @@ int main (int argc, char **argv) {
         else if (retval) {
             std::cin >> cmd;
             if (cmd == "q") {
+                // Cancel goal
                 ac.cancelGoal();
                 ROS_INFO("Goal cancelled.");
+                // Change param
+                int gc;
+                nh.getParam("/goals_cancelled", gc);
+                nh.setParam("/goals_cancelled", gc + 1);
                 break;
             }
         }
@@ -109,7 +115,18 @@ int main (int argc, char **argv) {
         finished = ac.waitForResult(r->expectedCycleTime());
     }
 
-    if (finished) ROS_INFO("Goal reached.");
+    if (finished) {
+        ROS_INFO("Goal reached.");
+        // Change param
+        int gr;
+        nh.getParam("/goals_reached", gr);
+        nh.setParam("/goals_reached", gr + 1);
+    } 
+
+    // Call goals service
+    ros::ServiceClient client = nh.serviceClient<assignment_rt1_2::Goals>("/goals");
+    assignment_rt1_2::Goals g;
+    client.call(g);
 
     while (true) {
         std::cout << "Program finished. Write 'r' to retry with another goal or 'e' to exit:" << std::endl;

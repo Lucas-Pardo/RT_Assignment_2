@@ -5,22 +5,19 @@
 ros::NodeHandle *nh;
 
 bool get_goals(assignment_rt1_2::Goals::Request &req, assignment_rt1_2::Goals::Response &res) {
-    std::string buf;
-    int suc, can;
-    if (!(*nh).getParam("goals_succeeded", buf)) {
+    int gr, gc;
+    if (!(*nh).getParam("/goals_reached", gr)) {
         ROS_INFO("Could not retrieve param /goals_succeeded.");
         return false;   
-    }
-    suc = atoi(buf.c_str());
-    
-    if (!(*nh).getParam("goals_cancelled", buf)) {
+    }    
+    if (!(*nh).getParam("/goals_cancelled", gc)) {
         ROS_INFO("Could not retrieve param /goals_cancelled.");
         return false; 
     }
-    can = atoi(buf.c_str());
 
-    std::cout << "Goals reached: " << suc << std::endl;
-    std::cout << "Goals cancelled: " << can << std::endl;
+    std::cout << "Goals reached: " << gr << std::endl;
+    std::cout << "Goals cancelled: " << gc << std::endl;
+    std::cout << "------------------------" << std::endl;
     return true;
 }
 
