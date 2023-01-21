@@ -1,4 +1,4 @@
-# Assignment 2 (RT1) 
+# Assignment 2 (RT1): Lucas Pardo (s5646719) 
 
 ## Prerequisites
 
