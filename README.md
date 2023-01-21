@@ -28,7 +28,7 @@ The values `(R)`, `(GX)` and `(GY)` are the user input. The launch file is expla
 
 ## In-depth explanation of the code
 
-Every cpp file is adecuately commented to understand what is being done but here we provide a more detailed explanation and the motive behind every decision.
+Every cpp file is properly commented to understand what is being done but here we provide a more detailed explanation and the motive behind every decision.
 
 ### Node A (move_to_goal.cpp)
 
