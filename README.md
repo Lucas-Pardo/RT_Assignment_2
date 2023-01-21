@@ -119,7 +119,7 @@ As we can see, we only read from the input (`cin`) if there is something availab
 
 #### **Main loop**
 
-The main loop is where we continuosly check for user input as explained, check for messages from `"/odom"`, and publish the custom message. The loop runs until the robot reaches the goal, ros is shutdown or the goal is cancelled (`break` in the previous code).
+The main loop is where we continuously check for user input as explained, check for messages from `"/odom"`, and publish the custom message. The loop runs until the robot reaches the goal, ros is shutdown or the goal is cancelled (`break` in the previous code).
 
 ```cpp
 bool finished = ac.waitForResult(r->expectedCycleTime());
