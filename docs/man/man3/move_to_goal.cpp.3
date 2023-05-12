@@ -1,0 +1,104 @@
+.TH "src/move_to_goal.cpp" 3 "Mon Mar 13 2023" "Version 1.1" "RT1 Assignment 2" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+src/move_to_goal.cpp \- Action client to move the robot to a goal\&.  
+
+.SH SYNOPSIS
+.br
+.PP
+\fC#include <ros/ros\&.h>\fP
+.br
+\fC#include <actionlib/client/simple_action_client\&.h>\fP
+.br
+\fC#include <assignment_2_2022/PlanningAction\&.h>\fP
+.br
+\fC#include <assignment_rt1_2/RobotStatus\&.h>\fP
+.br
+\fC#include <nav_msgs/Odometry\&.h>\fP
+.br
+\fC#include <assignment_rt1_2/Goals\&.h>\fP
+.br
+
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "void \fBget_status\fP (const nav_msgs::Odometry::ConstPtr &msg)"
+.br
+.RI "Callback function to read robot status\&. "
+.ti -1c
+.RI "int \fBmain\fP (int argc, char **argv)"
+.br
+.in -1c
+.SS "Variables"
+
+.in +1c
+.ti -1c
+.RI "float \fBx\fP"
+.br
+.ti -1c
+.RI "float \fBy\fP"
+.br
+.ti -1c
+.RI "float \fBvel_x\fP"
+.br
+.ti -1c
+.RI "float \fBvel_y\fP"
+.br
+.RI "Variables for the robot status (position and velocity) "
+.in -1c
+.SH "Detailed Description"
+.PP 
+Action client to move the robot to a goal\&. 
+
+
+.PP
+\fBAuthor\fP
+.RS 4
+Lucas Pardo Bernardi 
+.RE
+.PP
+\fBVersion\fP
+.RS 4
+1\&.1 
+.RE
+.PP
+\fBDate\fP
+.RS 4
+10/03/2023
+.RE
+.PP
+Subscribes to: 
+.br
+ º /odom
+.PP
+Publishes to: 
+.br
+ º /robot/status
+.PP
+Action client: 
+.br
+ º /reaching_goal
+.PP
+Description :
+.PP
+This node implements an action client to control the execution of the action server\&. It takes as arguments: (Rate) goal_x goal_y where Rate is the rate (Hz) at which the node reads and publishes messages, goal_x is the X position of the goal and goal_y the Y position\&. The rate can be skipped to use the default value of 5 Hz\&.
+.PP
+The node reads messages to obtain the status of the robot and publishes a new message containing the information read and the goal position\&. While the node is running it also detects inputs to allow the user to cancel the action\&. After the action is finished, whether succeded or cancelled, the node calls the service /goals to print the current number of goals reached and cancelled\&. 
+.SH "Function Documentation"
+.PP 
+.SS "void get_status (const nav_msgs::Odometry::ConstPtr & msg)"
+
+.PP
+Callback function to read robot status\&. 
+.PP
+\fBParameters\fP
+.RS 4
+\fImsg\fP The pointer to the message sent in the topic
+.RE
+.PP
+This function is used to read the messages published in the topic '/odom' and store the desired information in the global variables 
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for RT1 Assignment 2 from the source code\&.

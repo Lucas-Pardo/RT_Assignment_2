@@ -1,4 +1,4 @@
-# Assignment 2 (RT1): Lucas Pardo (s5646719) 
+# Assignment 2 (RT1) 
 
 ## Prerequisites
 
@@ -28,7 +28,7 @@ The values `(R)`, `(GX)` and `(GY)` are the user input. The launch file is expla
 
 ## In-depth explanation of the code
 
-Every cpp file is properly commented to understand what is being done but here we provide a more detailed explanation and the motive behind every decision.
+Every cpp file is adecuately commented to understand what is being done but here we provide a more detailed explanation and the motive behind every decision.
 
 ### Node A (move_to_goal.cpp)
 
@@ -119,7 +119,7 @@ As we can see, we only read from the input (`cin`) if there is something availab
 
 #### **Main loop**
 
-The main loop is where we continuously check for user input as explained, check for messages from `"/odom"`, and publish the custom message. The loop runs until the robot reaches the goal, ros is shutdown or the goal is cancelled (`break` in the previous code).
+The main loop is where we continuosly check for user input as explained, check for messages from `"/odom"`, and publish the custom message. The loop runs until the robot reaches the goal, ros is shutdown or the goal is cancelled (`break` in the previous code).
 
 ```cpp
 bool finished = ac.waitForResult(r->expectedCycleTime());

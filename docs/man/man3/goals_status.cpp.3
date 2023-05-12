@@ -1,0 +1,86 @@
+.TH "src/goals_status.cpp" 3 "Mon Mar 13 2023" "Version 1.1" "RT1 Assignment 2" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+src/goals_status.cpp \- Service server to print number of goals\&.  
+
+.SH SYNOPSIS
+.br
+.PP
+\fC#include <ros/ros\&.h>\fP
+.br
+\fC#include <assignment_rt1_2/Goals\&.h>\fP
+.br
+
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "bool \fBget_goals\fP (assignment_rt1_2::Goals::Request &req, assignment_rt1_2::Goals::Response &res)"
+.br
+.RI "Callback function that gets and prints goals\&. "
+.ti -1c
+.RI "int \fBmain\fP (int argc, char **argv)"
+.br
+.in -1c
+.SS "Variables"
+
+.in +1c
+.ti -1c
+.RI "ros::NodeHandle * \fBnh\fP"
+.br
+.RI "Global declaration of node handler\&. "
+.in -1c
+.SH "Detailed Description"
+.PP 
+Service server to print number of goals\&. 
+
+
+.PP
+\fBAuthor\fP
+.RS 4
+Lucas Pardo Bernardi 
+.RE
+.PP
+\fBVersion\fP
+.RS 4
+1\&.1 
+.RE
+.PP
+\fBDate\fP
+.RS 4
+13/03/2023
+.RE
+.PP
+\fBParameters\fP
+.RS 4
+\fIgoals_reached\fP Number of goals reached 
+.br
+\fIgoals_cancelled\fP Number of goals cancelled
+.RE
+.PP
+Service server: 
+.br
+ º /goals
+.PP
+Description :
+.PP
+This node implements a service server that when called prints the number of goals reached and the number of goals cancelled to the terminal\&. 
+.SH "Function Documentation"
+.PP 
+.SS "bool get_goals (assignment_rt1_2::Goals::Request & req, assignment_rt1_2::Goals::Response & res)"
+
+.PP
+Callback function that gets and prints goals\&. 
+.PP
+\fBParameters\fP
+.RS 4
+\fIreq\fP Pointer to the request of the service 
+.br
+\fIres\fP Pointer to the response of the service
+.RE
+.PP
+This function uses the information contained in the parameter server to print the number of goals reached and cancelled\&. This function is executed when the service '/goals' is called\&. 
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for RT1 Assignment 2 from the source code\&.

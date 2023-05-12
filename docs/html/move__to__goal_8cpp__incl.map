@@ -1,0 +1,9 @@
+<map id="src/move_to_goal.cpp" name="src/move_to_goal.cpp">
+<area shape="rect" id="node1" title="Action client to move the robot to a goal." alt="" coords="445,5,609,32"/>
+<area shape="rect" id="node2" title=" " alt="" coords="5,87,84,114"/>
+<area shape="rect" id="node3" title=" " alt="" coords="108,80,275,121"/>
+<area shape="rect" id="node4" title=" " alt="" coords="299,80,511,121"/>
+<area shape="rect" id="node5" title=" " alt="" coords="535,87,768,114"/>
+<area shape="rect" id="node6" title=" " alt="" coords="792,87,959,114"/>
+<area shape="rect" id="node7" title=" " alt="" coords="983,87,1173,114"/>
+</map>

@@ -5,8 +5,51 @@
 #include <nav_msgs/Odometry.h>
 #include <assignment_rt1_2/Goals.h>
 
-float x, y, vel_x, vel_y;
+/**
+ * \file move_to_goal.cpp
+ * \brief Action client to move the robot to a goal
+ * \author Lucas Pardo Bernardi
+ * \version 1.1
+ * \date 10/03/2023
+ * 
+ * \details
+ * 
+ * Subscribes to: <BR>
+ *  º /odom
+ * 
+ * Publishes to: <BR>
+ * º /robot/status
+ * 
+ * Action client: <BR>
+ * º /reaching_goal
+ * 
+ * Description :
+ * 
+ * This node implements an action client to control the execution of the action server.
+ * It takes as arguments: (Rate) goal_x goal_y
+ * where Rate is the rate (Hz) at which the node reads and publishes messages,
+ * goal_x is the X position of the goal and goal_y the Y position. The rate can be skipped
+ * to use the default value of 5 Hz.
+ * 
+ * The node reads messages to obtain the status of the robot and publishes a new message
+ * containing the information read and the goal position. While the node is running
+ * it also detects inputs to allow the user to cancel the action. After the action is
+ * finished, whether succeded or cancelled, the node calls the service /goals to print 
+ * the current number of goals reached and cancelled.
+**/
 
+float x; ///< Local copy of the x position of the robot
+float y; ///< Local copy of the y position of the robot
+float vel_x; ///< Local copy of the x component of the velocity
+float vel_y; ///< Local copy of the y component of the velocity
+
+/**
+ * \brief Callback function to read robot status
+ * \param msg The pointer to the message sent in the topic
+ * 
+ * This function is used to read the messages published in the topic "/odom"
+ * and store the desired information in the global variables
+**/
 void get_status(const nav_msgs::Odometry::ConstPtr &msg) {
     x = (float) msg->pose.pose.position.x;
     y = (float) msg->pose.pose.position.y;
@@ -15,7 +58,7 @@ void get_status(const nav_msgs::Odometry::ConstPtr &msg) {
 }
 
 int main (int argc, char **argv) {
-
+    
     ros::init(argc, argv, "test_bug0");
 
     // Node handler:
@@ -51,7 +94,7 @@ int main (int argc, char **argv) {
         goal_x = atof(argv[1]);
         goal_y = atof(argv[2]);
     } else {
-        ROS_INFO("Wrong number of arguments: (Rate) (goal_x goal_y). Starting with default values (5) (2, -5).");
+        ROS_INFO("Wrong number of arguments: (Rate) goal_x goal_y. Starting with default values (5) (2, -5).");
         r = new ros::Rate(5);
         goal_x = 2.0;
         goal_y = -5.0;

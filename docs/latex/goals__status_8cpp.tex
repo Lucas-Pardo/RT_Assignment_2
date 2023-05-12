@@ -1,0 +1,77 @@
+\hypertarget{goals__status_8cpp}{}\doxysection{src/goals\+\_\+status.cpp File Reference}
+\label{goals__status_8cpp}\index{src/goals\_status.cpp@{src/goals\_status.cpp}}
+
+
+Service server to print number of goals.  
+
+
+{\ttfamily \#include $<$ros/ros.\+h$>$}\newline
+{\ttfamily \#include $<$assignment\+\_\+rt1\+\_\+2/\+Goals.\+h$>$}\newline
+Include dependency graph for goals\+\_\+status.\+cpp\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=300pt]{goals__status_8cpp__incl}
+\end{center}
+\end{figure}
+\doxysubsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+bool \mbox{\hyperlink{goals__status_8cpp_a142ca2bd3a36c5ef03781797f4a2cd11}{get\+\_\+goals}} (assignment\+\_\+rt1\+\_\+2\+::\+Goals\+::\+Request \&req, assignment\+\_\+rt1\+\_\+2\+::\+Goals\+::\+Response \&res)
+\begin{DoxyCompactList}\small\item\em Callback function that gets and prints goals. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{goals__status_8cpp_a3c04138a5bfe5d72780bb7e82a18e627}\label{goals__status_8cpp_a3c04138a5bfe5d72780bb7e82a18e627}} 
+int {\bfseries main} (int argc, char $\ast$$\ast$argv)
+\end{DoxyCompactItemize}
+\doxysubsection*{Variables}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{goals__status_8cpp_a898856750d65dc6e6706ea4772115d04}\label{goals__status_8cpp_a898856750d65dc6e6706ea4772115d04}} 
+ros\+::\+Node\+Handle $\ast$ \mbox{\hyperlink{goals__status_8cpp_a898856750d65dc6e6706ea4772115d04}{nh}}
+\begin{DoxyCompactList}\small\item\em Global declaration of node handler. \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+Service server to print number of goals. 
+
+\begin{DoxyAuthor}{Author}
+Lucas Pardo Bernardi 
+\end{DoxyAuthor}
+\begin{DoxyVersion}{Version}
+1.\+1 
+\end{DoxyVersion}
+\begin{DoxyDate}{Date}
+13/03/2023
+\end{DoxyDate}
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\texttt{ in}}  & {\em goals\+\_\+reached} & Number of goals reached \\
+\hline
+\mbox{\texttt{ in}}  & {\em goals\+\_\+cancelled} & Number of goals cancelled\\
+\hline
+\end{DoxyParams}
+Service server\+: ~\newline
+ º /goals
+
+Description \+:
+
+This node implements a service server that when called prints the number of goals reached and the number of goals cancelled to the terminal. 
+
+\doxysubsection{Function Documentation}
+\mbox{\Hypertarget{goals__status_8cpp_a142ca2bd3a36c5ef03781797f4a2cd11}\label{goals__status_8cpp_a142ca2bd3a36c5ef03781797f4a2cd11}} 
+\index{goals\_status.cpp@{goals\_status.cpp}!get\_goals@{get\_goals}}
+\index{get\_goals@{get\_goals}!goals\_status.cpp@{goals\_status.cpp}}
+\doxysubsubsection{\texorpdfstring{get\_goals()}{get\_goals()}}
+{\footnotesize\ttfamily bool get\+\_\+goals (\begin{DoxyParamCaption}\item[{assignment\+\_\+rt1\+\_\+2\+::\+Goals\+::\+Request \&}]{req,  }\item[{assignment\+\_\+rt1\+\_\+2\+::\+Goals\+::\+Response \&}]{res }\end{DoxyParamCaption})}
+
+
+
+Callback function that gets and prints goals. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em req} & Pointer to the request of the service \\
+\hline
+{\em res} & Pointer to the response of the service\\
+\hline
+\end{DoxyParams}
+This function uses the information contained in the parameter server to print the number of goals reached and cancelled. This function is executed when the service \char`\"{}/goals\char`\"{} is called. 

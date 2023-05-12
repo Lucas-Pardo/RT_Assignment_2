@@ -1,0 +1,461 @@
+.TH "md__r_e_a_d_m_e" 3 "Mon Mar 13 2023" "Version 1.1" "RT1 Assignment 2" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+md__r_e_a_d_m_e \- Assignment 2 (RT1) 
+
+.SH "Prerequisites"
+.PP
+This assignment is built upon the following \fCros package\fP\&. This base package implements the \fCbug 0 algorithm\fP as an action server in python and makes use of Rviz and Gazebo to simulate everything\&. These two pieces of software are included in the full instalation of ROS Noetic\&. Python 3 must be the default version\&.
+.SH "Assignment description"
+.PP
+The goal of the assignment is to create a standalone ros package based on the \fCbase package\fP with the following characteristics:
+.PP
+.IP "\(bu" 2
+A node (A) implementing an action client that allows the user to set the goal of the robot (its position) or cancel it\&. This node also needs to publish the position and velocity of the robot as a custom message\&.
+.IP "\(bu" 2
+A node (B) implementing a service server that when called prints the number of goals reached and cancelled\&.
+.IP "\(bu" 2
+A node (C) that subscribes to the robot's position and velocity using the custom message published by node A and prints several stats such as distance to goal and average speed\&. The frequency at which it prints information can be set by the user\&.
+.IP "\(bu" 2
+A launch file that starts the whole simulation and sets the different parameters needed\&.
+.PP
+.SH "How to run the program"
+.PP
+The whole simulation including the contents of this assignment can be run using the following command after initializing ros (\fIroscore\fP) and compiling the package (\fIcatkin_make\fP):
+.PP
+.PP
+.nf
+roslaunch assignment_rt1_2 assignment\&.launch rate:=(R) goal_x:=(GX) goal_y:=(GY)
+.fi
+.PP
+.PP
+The values \fC(R)\fP, \fC(GX)\fP and \fC(GY)\fP are the user input\&. The launch file is explained later but the \fCrate\fP argument has a default value so \fCrate:=(R)\fP can be omitted\&.
+.SH "In-depth explanation of the code"
+.PP
+Every cpp file is adecuately commented to understand what is being done but here we provide a more detailed explanation and the motive behind every decision\&.
+.SS "Node A (move_to_goal\&.cpp)"
+Setting the goal is easy and can be done just by passing the goal position as argument to the function (\fIargv\fP)\&. This can be parsed and sent to the action server\&. However, we also must be able to cancel the goal at any time, which means that we need to check for user input periodically\&. We must also publish the custom message with the given rate\&.
+.SS "<strong>Pseudocode</strong>"
+The basic pseudocode for node A can be the following:
+.PP
+.PP
+.nf
+goal, rate = parse arguments
+send goal to action server
+
+while action is not finished:
+    if there is user input to cancel goal:
+        cancel goal
+        break loop
+    check for callbacks ("/odom")
+    publish custom message
+    sleep at the given rate
+.fi
+.PP
+.PP
+Our code is a little different in the sense that it cycles itself after finishing to allow the user to input a new goal, so in reality, this pseudocode would be inside a loop\&.
+.SS "<strong>Argument parsing</strong>"
+.PP
+.nf
+double goal_x, goal_y;
+ros::Rate *r;
+
+// Check number of arguments
+if (argc == 4) {
+    r = new ros::Rate(atof(argv[1]));
+    goal_x = atof(argv[2]);
+    goal_y = atof(argv[3]);
+} else if (argc == 3) {
+    r = new ros::Rate(5);
+    goal_x = atof(argv[1]);
+    goal_y = atof(argv[2]);
+} else {
+    ROS_INFO("Wrong number of arguments: (Rate) (goal_x goal_y)\&. Starting with default values (5) (2, -5)\&.");
+    r = new ros::Rate(5);
+    goal_x = 2\&.0;
+    goal_y = -5\&.0;
+}
+.fi
+.PP
+.PP
+As we can see in the code, it was designed to be able to run with different parameters\&. It can run with all three parameters given\&. The rate can be omitted, in which case the default rate of 5 Hz will be used\&. In any other case the arguments are considered to be incomplete, in which case a warning message is given and the node is executed with some default values\&.
+.PP
+This is not really useful for the complete execution of the assignment (using the launch file) since it will always have the three arguments, else the launch itself fails\&. Nevertheless, it is useful when the node is run manually\&.
+.SS "<strong>Checking user input</strong>"
+An easy way to check for user input in non-blocking mode is using a \fCselect\fP with zero timeout\&.
+.PP
+.PP
+.nf
+// Variables for select()
+fd_set rfds;
+int retval;
+std::string cmd;
+struct timeval tv = {0, 0};
+
+// Create the set of read fds:
+FD_ZERO(&rfds);
+FD_SET(STDIN_FILENO, &rfds);
+
+retval = select(STDIN_FILENO+1, &rfds, NULL, NULL, &tv);
+if (retval < 0 && errno != EINTR) {
+    std::cerr << "Error in select: " << strerror(errno) << "\n";
+    break;
+}
+else if (retval) {
+    std::cin >> cmd;
+    if (cmd == "q") {
+        // Cancel goal
+        ac\&.cancelGoal();
+        ROS_INFO("Goal cancelled\&.");
+        // Change param
+        int gc;
+        nh\&.getParam("/goals_cancelled", gc);
+        nh\&.setParam("/goals_cancelled", gc + 1);
+        break;
+    }
+}
+.fi
+.PP
+.PP
+As we can see, we only read from the input (\fCcin\fP) if there is something available to read, and in this case, if that is the letter 'q' we cancel the goal (which is explained later)\&.
+.SS "<strong>Main loop</strong>"
+The main loop is where we continuosly check for user input as explained, check for messages from \fC'/odom'\fP, and publish the custom message\&. The loop runs until the robot reaches the goal, ros is shutdown or the goal is cancelled (\fCbreak\fP in the previous code)\&.
+.PP
+.PP
+.nf
+bool finished = ac\&.waitForResult(r->expectedCycleTime());
+
+while (!finished && ros::ok()) { 
+    \&.\&.\&.
+    finished = ac\&.waitForResult(r->expectedCycleTime());
+}
+.fi
+.PP
+.PP
+We take advantage of the function \fCwaitForResult\fP, which can take as argument a duration to wait for, to make the program sleep for the given rate\&.
+.SS "<strong>Publisher and subscriber</strong>"
+To obtain the information about the robot such as position and velocity we use the information published in the topic \fC'/odom'\fP through the callback function \fCget_status\fP:
+.PP
+.PP
+.nf
+float x, y, vel_x, vel_y;
+
+void get_status(const nav_msgs::Odometry::ConstPtr &msg) {
+    x = (float) msg->pose\&.pose\&.position\&.x;
+    y = (float) msg->pose\&.pose\&.position\&.y;
+    vel_x = (float) msg->twist\&.twist\&.linear\&.x;
+    vel_y = (float) msg->twist\&.twist\&.linear\&.y;
+}
+.fi
+.PP
+.PP
+To publish the information we need to node C, we use the custom message defined in the \fImsg\fP folder, \fCRobotStatus\&.msg\fP:
+.PP
+.PP
+.nf
+float32 x
+float32 y
+float32 vel_x
+float32 vel_y
+float32 goal_x
+float32 goal_y
+.fi
+.PP
+.PP
+.IP "\(bu" 2
+Notice that we also send the goal position as part of the message\&. The reason why is explained in \fCnode C\fP\&.
+.PP
+.PP
+In node A we simply publish this information to the topic \fC'/robot/status'\fP:
+.PP
+.PP
+.nf
+// Publisher:
+ros::Publisher pub;
+pub = nh\&.advertise<assignment_rt1_2::RobotStatus>("/robot/status", 1);
+assignment_rt1_2::RobotStatus rs;
+.fi
+.PP
+.PP
+.PP
+.nf
+// Publish status:
+rs\&.x = x;
+rs\&.y = y;
+rs\&.vel_x = vel_x;
+rs\&.vel_y = vel_y;
+rs\&.goal_x = goal_x;
+rs\&.goal_y = goal_y;
+pub\&.publish(rs);
+.fi
+.PP
+.SS "<strong>Information about the goals</strong>"
+As it is explained in the \fCassignment description\fP, node B must have access to the goals both reached and cancelled, information that is only available in the action server or client\&. That means that we need a way to send information from one node to the other\&. Since node B is a service server, the usual way to convey this information would be through a \fIrequest\fP, but for reasons explained later, we have decided to use the \fIparameter server\fP\&. We can use a \fIparam\fP to hold the number of goals reached and another for the goals cancelled\&. So in both cases, we just read the current value of that \fIparam\fP and set it to it plus one:
+.PP
+.PP
+.nf
+// Change param
+int gc;
+nh\&.getParam("/goals_cancelled", gc);
+nh\&.setParam("/goals_cancelled", gc + 1);
+.fi
+.PP
+.SS "<strong>Exit routine</strong>"
+Exiting the main loop only occurs, under normal circunstances, after the robot has either reached the goal or it has been cancelled\&. If the \fCfinished\fP flag is \fCtrue\fP, the goal has been reached and we change the \fIparam\fP:
+.PP
+.PP
+.nf
+if (finished) {
+    ROS_INFO("Goal reached\&.");
+    // Change param
+    int gr;
+    nh\&.getParam("/goals_reached", gr);
+    nh\&.setParam("/goals_reached", gr + 1);
+} 
+.fi
+.PP
+.PP
+After finishing, the program calls the service of node B to print the goals:
+.PP
+.PP
+.nf
+// Call goals service
+ros::ServiceClient client = nh\&.serviceClient<assignment_rt1_2::Goals>("/goals");
+assignment_rt1_2::Goals g;
+client\&.call(g);
+.fi
+.PP
+.PP
+As we said in the \fCpseudocode\fP, we designed the code to allow the user to input a new goal without exiting the program and having to call it again manually (rosrun \&.\&.\&.)\&. To do that, we create an infinite loop that is only broken when the user inputs 'e' to exit or 'r' to retry\&. After inputting 'r' the user is then prompted to enter the new goal position:
+.PP
+.PP
+.nf
+while (true) {
+    std::cout << "Program finished\&. Write 'r' to retry with another goal or 'e' to exit:" << std::endl;
+    std::string buf;
+    std::cin >> buf;
+    if (buf == "e" || buf == "E") break;
+    if (buf == "r" || buf == "R") {
+        std::cout << "Enter new goal_x:" << std::endl;
+        std::cin >> buf;
+        goal_x = atof(buf\&.c_str());
+        std::cout << "Enter new goal_y:" << std::endl;
+        std::cin >> buf;
+        goal_y = atof(buf\&.c_str());
+        goto cycle;
+    }
+}
+.fi
+.PP
+.PP
+We make use of the \fCgoto\fP function and the label \fCcycle\fP to jump to a previous point in the program, just before sending the goal:
+.PP
+.PP
+.nf
+cycle:
+
+goal\&.target_pose\&.pose\&.position\&.x = goal_x;
+goal\&.target_pose\&.pose\&.position\&.y = goal_y;
+ac\&.sendGoal(goal);
+ROS_INFO("Goal sent, press q to cancel task\&.");
+.fi
+.PP
+.SS "Node B (goals_status\&.cpp)"
+As we explained in \fCnode A\fP, we use \fIparams\fP to save the amount of goals reached and cancelled to the \fIparameter server\fP\&. The node then creates the service server \fC'/goals'\fP and waits infinitely for calls:
+.PP
+.PP
+.nf
+// Service server:
+ros::ServiceServer ss = (*nh)\&.advertiseService("/goals", get_goals);
+
+ROS_INFO("Service server initialized\&.");
+
+ros::spin();
+.fi
+.PP
+.PP
+The callback function \fCget_goals\fP just gets the \fIparams\fP from the \fIparameter server\fP and prints them:
+.PP
+.PP
+.nf
+bool get_goals(assignment_rt1_2::Goals::Request &req, assignment_rt1_2::Goals::Response &res) {
+    int gr, gc;
+    if (!(*nh)\&.getParam("/goals_reached", gr)) {
+        ROS_INFO("Could not retrieve param /goals_succeeded\&.");
+        return false;   
+    }    
+    if (!(*nh)\&.getParam("/goals_cancelled", gc)) {
+        ROS_INFO("Could not retrieve param /goals_cancelled\&.");
+        return false; 
+    }
+
+    std::cout << "Goals reached: " << gr << std::endl;
+    std::cout << "Goals cancelled: " << gc << std::endl;
+    std::cout << "------------------------" << std::endl;
+    return true;
+}
+.fi
+.PP
+.PP
+Because the service just prints \fIparams\fP, there is no need for a \fCrequest\fP or \fCresponse\fP\&. As such, the service \fCGoals\&.srv\fP defined in the \fIsrv\fP folder is just an empty service:
+.PP
+.PP
+.nf
+---
+.fi
+.PP
+.SS "<strong>Other possible approaches</strong>"
+The whole reason behind using the \fIparameter server\fP to hold the goals reached and cancelled is because we only have access to that information while the action client (node A) is running\&. We could suppose that node A will be run continuously, i\&.e\&. that the user will always use the retry functionality of the program, in which case we could have local variables counting the number of goals reached and cancelled and send them as part of the request like this:
+.PP
+.PP
+.nf
+int goals_reached
+int goals_cancelled
+---
+.fi
+.PP
+.PP
+That approach however, would not allow for manual calls of the service since the user would need to know the amount before\&. A better approach would be to have the local counting variables in node B and node A just sends a \fCbool\fP variable of whether the goal has been cancelled or not (reached) as part of the request:
+.PP
+.PP
+.nf
+bool cancelled
+---
+.fi
+.PP
+.PP
+That would work fine for manual calls, although we would need to send as part of the request whether the last goal was cancelled or not\&. The important part is that it would work even if node A is closed and opened again, which was our initial concern\&. However, if the service server (node B) is closed and opened again, the goals will be reset\&. Without modifying the action server, the only way to save the goals since the beggining of the simulation regardless of whether node A or B have been closed, is through the \fIparameter server\fP\&.
+.SS "Node C (robot_status\&.cpp)"
+This node reads information published by node A to print different stats about the robot\&.
+.SS "<strong>Argument parsing</strong>"
+Node C only takes as argument the rate at which it prints information:
+.PP
+.PP
+.nf
+// Check arguments for rate:
+ros::Rate *r;
+
+if (argc == 2) {
+    r = new ros::Rate((double) atof(argv[1]));
+} else {
+    ROS_INFO("Wrong number of arguments: (Rate)\&.");
+    exit(1);
+}
+.fi
+.PP
+.SS "<strong>Callback function</strong>"
+The whole behaviour of this node is governed by its callback function\&. The only thing that this node does is check for messages published by node A and use the callback function:
+.PP
+.PP
+.nf
+while(ros::ok()) {
+        
+    // Check for callbacks:
+    ros::spinOnce();
+
+    // Sleep at the given rate:
+    r->sleep();
+}
+.fi
+.PP
+.PP
+.IP "\(bu" 2
+\fBNote:\fP Instead of using \fCros::spin()\fP as in node B, we use \fCros::spinOnce()\fP so that we can sleep manually at the given rate\&.
+.PP
+.PP
+The callback function is divided in two parts: the proper callback function and an auxiliary function that only prints the stats\&. The callback function \fCget_status\fP takes the contents of the custom message and saves it in gloabal variables:
+.PP
+.PP
+.nf
+float x, y, vel_x, vel_y, goal_x = 0, goal_y = 0;
+int c = 0;
+float acc_vx = 0, acc_vy = 0;
+
+void get_status(const assignment_rt1_2::RobotStatus::ConstPtr &msg) {
+    // Check if goal changed:
+    float eps = 1e-3; // Threshold for the goal change
+    if (std::abs(msg->goal_x - goal_x) > eps || std::abs(msg->goal_y - goal_y) > eps) {
+        ROS_INFO("Goal change detected, resetting stats\&.");
+        goal_x = msg->goal_x;
+        goal_y = msg->goal_y;
+        acc_vx = 0;
+        acc_vy = 0;
+    }
+    // Copy parameters from the message:
+    x = msg->x;
+    y = msg->y;
+    vel_x = msg->vel_x;
+    vel_y = msg->vel_y;
+    acc_vx += std::abs(vel_x);
+    acc_vy += std::abs(vel_y);
+    c++;
+    print_msg();
+}
+.fi
+.PP
+.PP
+The reason why we also send the goal position in the custom message is to be able to detect if the goal has changed and reset the stats, in this case, the average velocity must be reset\&. Of course, another reason is that we need access to the goal position to compute the distance from the robot to the goal\&. This way, the node can be run continuously\&.
+.PP
+Another aspect is that instead of saving every previous velocity in an array, we just save their absolute cumulative sum (\fCacc_vx\fP, \fCacc_vy\fP) and the number of callbacks (\fCc\fP) so that the average speed in either component can be computed as \fCacc\fP / \fCc\fP\&.
+.PP
+The function \fCprint_msg\fP that is called at the end of the callback function is the one that computes and prints all the information:
+.PP
+.PP
+.nf
+void print_msg() {
+    std::cout << "ROBOT STATUS:" << std::endl;
+    std::cout << "x = " << x << std::endl;
+    std::cout << "y = " << y << std::endl;
+    std::cout << "vel_x = " << vel_x << std::endl;
+    std::cout << "vel_y = " << vel_y << std::endl;
+    std::cout << "======================================================" << std::endl;
+    std::cout << "ADVANCED STATUS:" << std::endl;
+    std::cout << "Distance to goal: " << std::sqrt((goal_x - x)*(goal_x - x) + (goal_y - y)*(goal_y - y)) << std::endl;
+    float av_x = acc_vx / c;
+    float av_y = acc_vy / c; 
+    std::cout << "Average speed in x: " << av_x << std::endl;
+    std::cout << "Average speed in y: " << av_y << std::endl;
+    std::cout << "Average speed: " << std::sqrt(av_x*av_x + av_y*av_y) << std::endl;
+    std::cout << "======================================================" << std::endl;
+    std::cout << "------------------------------------------------------" << std::endl;
+    std::cout << "======================================================" << std::endl;
+}
+.fi
+.PP
+.PP
+An interesting fact is that regardless of where the goal is, more than 90% of the speed is in the \fIx\fP direction, even if the path is a straight line parallel to the Y-axis\&. The only reasonable explanation for this behaviour is that the information published in the topic \fC'/odom'\fP regarding the velocity of the robot (\fCTwist\fP) is given with respect to the local frame of reference of the robot\&. Which would make sense since the robot always moves forward and rotates about its axis to make a turn\&.
+.SS "Launch file"
+As stated in the section \fCHow to run the program\fP, we provide the launch file \fCassignment\&.launch\fP in the \fIlaunch\fP folder to start up the whole simulation, including the nodes in the \fCbase package\fP\&.
+.PP
+.PP
+.nf
+<launch>
+    <include file="$(find assignment_2_2022)/launch/assignment1\&.launch" />
+    <arg name="rate" default="2" />
+    <arg name="goal_x" />
+    <arg name="goal_y" />
+    <param name="/goals_reached" value="0" type="int"/>
+    <param name="/goals_cancelled" value="0" type="int"/>
+    <node pkg="assignment_rt1_2" type="set_goal_node" name="set_goal_node" output="screen" launch-prefix="terminator -x" args="$(arg rate) $(arg goal_x) $(arg goal_y)" />
+    <node pkg="assignment_rt1_2" type="robot_status_node" name="robot_status_node" output="screen" launch-prefix="terminator -x" args="$(arg rate)" />
+    <node pkg="assignment_rt1_2" type="goals_status_node" name="goals_status_node" output="screen" launch-prefix="terminator -x" />
+</launch>
+.fi
+.PP
+.PP
+As we can see, the first line launches the launch file provided in the \fCbase package\fP\&. Then we define the arguments that the launch file takes: \fCrate\fP, \fCgoal_x\fP and \fCgoal_y\fP\&. We decided to provide a default value of 2 Hz to the \fCrate\fP so that it can be omitted\&. Then, we define and set the \fIparams\fP \fC'/goals_reached'\fP and \fC'/goals_cancelled'\fP to zero\&. Finally, we just initialize each node (A, B and C) with the corresponding arguments in a new terminal using the option \fClaunch-prefix\fP\&.
+.PP
+.IP "\(bu" 2
+\fBNote:\fP We use \fIterminator\fP terminals to launch the nodes, it can be installed using the command \fCsudo apt install terminator\fP\&. Nevertheless, the terminal used to launch the nodes can also be changed manually, for instance, 'terminator -x' can be substituted by 'gnome-terminal -x', 'konsole -e', 'xterm -e' or whatever other terminal\&. However, in our \fIWSL\fP system with Ubuntu 20\&.04, \fIkonsole\fP terminal crashes nodes A and C for a reason we have not been able to determine\&.
+.PP
+.SH "Improvements"
+.PP
+.IP "\(bu" 2
+\fBError handling:\fP There is very few error checking and handling in the code, which is not ideal\&.
+.IP "\(bu" 2
+\fBWrong input handling:\fP There are several instances in which the user provide an input to the program and we do not check or handle it properly\&. For instance, we do not check if the arguments passed (\fCrate\fP, \fCgoal_x\fP and \fCgoal_y\fP) are numbers, we just assume they are, which will produce errors when converting it from string to float in the case that they are not numbers\&. Error that we have not handled\&. The other instance of wrong input is in the \fCexit routine\fP of node A\&. To retry the user must input the new position of the goal, numbers that we do not check whether they are numbers and would produce the same error as before\&.
+.IP "\(bu" 2
+\fBProper exiting:\fP Only node A has a proper exit routine in which the program finishes and returns zero\&. The other two nodes are run forever and can only be stopped with signals (\fCSIGINT\fP, \fCSIGTERM\fP, etc\&.)\&. Right now the easiest way is to just close the terminal in which they are initialized, which automatically sends signal \fCSIGHUP\fP to terminate the node\&. 
+.PP
+

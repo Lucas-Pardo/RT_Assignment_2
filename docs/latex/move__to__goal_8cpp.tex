@@ -1,0 +1,89 @@
+\hypertarget{move__to__goal_8cpp}{}\doxysection{src/move\+\_\+to\+\_\+goal.cpp File Reference}
+\label{move__to__goal_8cpp}\index{src/move\_to\_goal.cpp@{src/move\_to\_goal.cpp}}
+
+
+Action client to move the robot to a goal.  
+
+
+{\ttfamily \#include $<$ros/ros.\+h$>$}\newline
+{\ttfamily \#include $<$actionlib/client/simple\+\_\+action\+\_\+client.\+h$>$}\newline
+{\ttfamily \#include $<$assignment\+\_\+2\+\_\+2022/\+Planning\+Action.\+h$>$}\newline
+{\ttfamily \#include $<$assignment\+\_\+rt1\+\_\+2/\+Robot\+Status.\+h$>$}\newline
+{\ttfamily \#include $<$nav\+\_\+msgs/\+Odometry.\+h$>$}\newline
+{\ttfamily \#include $<$assignment\+\_\+rt1\+\_\+2/\+Goals.\+h$>$}\newline
+Include dependency graph for move\+\_\+to\+\_\+goal.\+cpp\+:\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{move__to__goal_8cpp__incl}
+\end{center}
+\end{figure}
+\doxysubsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+void \mbox{\hyperlink{move__to__goal_8cpp_a6067cf186c9a69519cbd89482fd7874d}{get\+\_\+status}} (const nav\+\_\+msgs\+::\+Odometry\+::\+Const\+Ptr \&msg)
+\begin{DoxyCompactList}\small\item\em Callback function to read robot status. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{move__to__goal_8cpp_a3c04138a5bfe5d72780bb7e82a18e627}\label{move__to__goal_8cpp_a3c04138a5bfe5d72780bb7e82a18e627}} 
+int {\bfseries main} (int argc, char $\ast$$\ast$argv)
+\end{DoxyCompactItemize}
+\doxysubsection*{Variables}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{move__to__goal_8cpp_ad0da36b2558901e21e7a30f6c227a45e}\label{move__to__goal_8cpp_ad0da36b2558901e21e7a30f6c227a45e}} 
+float \mbox{\hyperlink{move__to__goal_8cpp_ad0da36b2558901e21e7a30f6c227a45e}{x}}
+\begin{DoxyCompactList}\small\item\em Local copy of the x position of the robot. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{move__to__goal_8cpp_aa4f0d3eebc3c443f9be81bf48561a217}\label{move__to__goal_8cpp_aa4f0d3eebc3c443f9be81bf48561a217}} 
+float \mbox{\hyperlink{move__to__goal_8cpp_aa4f0d3eebc3c443f9be81bf48561a217}{y}}
+\begin{DoxyCompactList}\small\item\em Local copy of the y position of the robot. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{move__to__goal_8cpp_a4b312b3530217eb51cbad6e930610f6b}\label{move__to__goal_8cpp_a4b312b3530217eb51cbad6e930610f6b}} 
+float \mbox{\hyperlink{move__to__goal_8cpp_a4b312b3530217eb51cbad6e930610f6b}{vel\+\_\+x}}
+\begin{DoxyCompactList}\small\item\em Local copy of the x component of the velocity. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{move__to__goal_8cpp_a1dd0876197a1e2dba35d41d6a6d9eab4}\label{move__to__goal_8cpp_a1dd0876197a1e2dba35d41d6a6d9eab4}} 
+float \mbox{\hyperlink{move__to__goal_8cpp_a1dd0876197a1e2dba35d41d6a6d9eab4}{vel\+\_\+y}}
+\begin{DoxyCompactList}\small\item\em Local copy of the y component of the velocity. \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+Action client to move the robot to a goal. 
+
+\begin{DoxyAuthor}{Author}
+Lucas Pardo Bernardi 
+\end{DoxyAuthor}
+\begin{DoxyVersion}{Version}
+1.\+1 
+\end{DoxyVersion}
+\begin{DoxyDate}{Date}
+10/03/2023
+\end{DoxyDate}
+Subscribes to\+: ~\newline
+ º /odom
+
+Publishes to\+: ~\newline
+ º /robot/status
+
+Action client\+: ~\newline
+ º /reaching\+\_\+goal
+
+Description \+:
+
+This node implements an action client to control the execution of the action server. It takes as arguments\+: (Rate) goal\+\_\+x goal\+\_\+y where Rate is the rate (Hz) at which the node reads and publishes messages, goal\+\_\+x is the X position of the goal and goal\+\_\+y the Y position. The rate can be skipped to use the default value of 5 Hz.
+
+The node reads messages to obtain the status of the robot and publishes a new message containing the information read and the goal position. While the node is running it also detects inputs to allow the user to cancel the action. After the action is finished, whether succeded or cancelled, the node calls the service /goals to print the current number of goals reached and cancelled. 
+
+\doxysubsection{Function Documentation}
+\mbox{\Hypertarget{move__to__goal_8cpp_a6067cf186c9a69519cbd89482fd7874d}\label{move__to__goal_8cpp_a6067cf186c9a69519cbd89482fd7874d}} 
+\index{move\_to\_goal.cpp@{move\_to\_goal.cpp}!get\_status@{get\_status}}
+\index{get\_status@{get\_status}!move\_to\_goal.cpp@{move\_to\_goal.cpp}}
+\doxysubsubsection{\texorpdfstring{get\_status()}{get\_status()}}
+{\footnotesize\ttfamily void get\+\_\+status (\begin{DoxyParamCaption}\item[{const nav\+\_\+msgs\+::\+Odometry\+::\+Const\+Ptr \&}]{msg }\end{DoxyParamCaption})}
+
+
+
+Callback function to read robot status. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em msg} & The pointer to the message sent in the topic\\
+\hline
+\end{DoxyParams}
+This function is used to read the messages published in the topic \char`\"{}/odom\char`\"{} and store the desired information in the global variables 

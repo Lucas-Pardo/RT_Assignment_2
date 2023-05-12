@@ -1,0 +1,111 @@
+.TH "src/robot_status.cpp" 3 "Mon Mar 13 2023" "Version 1.1" "RT1 Assignment 2" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+src/robot_status.cpp \- Node that prints robot status information\&.  
+
+.SH SYNOPSIS
+.br
+.PP
+\fC#include <ros/ros\&.h>\fP
+.br
+\fC#include <assignment_rt1_2/RobotStatus\&.h>\fP
+.br
+
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "void \fBprint_msg\fP ()"
+.br
+.RI "Function that computes and prints information to the terminal\&. "
+.ti -1c
+.RI "void \fBget_status\fP (const assignment_rt1_2::RobotStatus::ConstPtr &msg)"
+.br
+.RI "Callback function to print robot status\&. "
+.ti -1c
+.RI "int \fBmain\fP (int argc, char **argv)"
+.br
+.in -1c
+.SS "Variables"
+
+.in +1c
+.ti -1c
+.RI "float \fBx\fP"
+.br
+.ti -1c
+.RI "float \fBy\fP"
+.br
+.ti -1c
+.RI "float \fBvel_x\fP"
+.br
+.ti -1c
+.RI "float \fBvel_y\fP"
+.br
+.ti -1c
+.RI "float \fBgoal_x\fP = 0"
+.br
+.ti -1c
+.RI "float \fBgoal_y\fP = 0"
+.br
+.RI "Variables to hold robot and goal status\&. "
+.ti -1c
+.RI "int \fBc\fP = 0"
+.br
+.RI "Variable that counts number of messages\&. "
+.ti -1c
+.RI "float \fBacc_vx\fP = 0"
+.br
+.ti -1c
+.RI "float \fBacc_vy\fP = 0"
+.br
+.RI "Variables that accumulate the speeds (to compute the average) "
+.in -1c
+.SH "Detailed Description"
+.PP 
+Node that prints robot status information\&. 
+
+
+.PP
+\fBAuthor\fP
+.RS 4
+Lucas Pardo Bernardi 
+.RE
+.PP
+\fBVersion\fP
+.RS 4
+1\&.1 
+.RE
+.PP
+\fBDate\fP
+.RS 4
+13/03/2023
+.RE
+.PP
+Subscribes to: 
+.br
+ º /robot/status
+.PP
+Description :
+.PP
+This node reads the information contained in the custom message published in the topic '/robot/status' and prints it on the terminal at a certain rate\&. It takes as argument the rate at which the node works (Hz)\&. 
+.SH "Function Documentation"
+.PP 
+.SS "void get_status (const assignment_rt1_2::RobotStatus::ConstPtr & msg)"
+
+.PP
+Callback function to print robot status\&. 
+.PP
+\fBParameters\fP
+.RS 4
+\fImsg\fP The pointer to the message sent in the topic
+.RE
+.PP
+This function is used to update the global variables with the new information available in the message and at the end it calls the previous function 'print_msg' to print this new information to the terminal\&. 
+.SS "void print_msg ()"
+
+.PP
+Function that computes and prints information to the terminal\&. This function uses the information contained in the global variables to print the robot position, velocity, distance to the goal, average speed in each direction and total average speed\&. 
+.SH "Author"
+.PP 
+Generated automatically by Doxygen for RT1 Assignment 2 from the source code\&.

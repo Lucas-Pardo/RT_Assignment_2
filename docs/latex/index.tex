@@ -1,0 +1,431 @@
+\hypertarget{index_autotoc_md1}{}\doxysection{Prerequisites}\label{index_autotoc_md1}
+This assignment is built upon the following \href{https://github.com/CarmineD8/assignment_2_2022}{\texttt{ ros package}}. This base package implements the \href{https://en.wikipedia.org/wiki/Bug_algorithm}{\texttt{ bug 0 algorithm}} as an action server in python and makes use of Rviz and Gazebo to simulate everything. These two pieces of software are included in the full instalation of R\+OS Noetic. Python 3 must be the default version.\hypertarget{index_autotoc_md2}{}\doxysection{Assignment description}\label{index_autotoc_md2}
+The goal of the assignment is to create a standalone ros package based on the \href{https://github.com/CarmineD8/assignment_2_2022}{\texttt{ base package}} with the following characteristics\+:
+
+
+\begin{DoxyItemize}
+\item A node (A) implementing an action client that allows the user to set the goal of the robot (its position) or cancel it. This node also needs to publish the position and velocity of the robot as a custom message.
+\item A node (B) implementing a service server that when called prints the number of goals reached and cancelled.
+\item A node (C) that subscribes to the robot\textquotesingle{}s position and velocity using the custom message published by node A and prints several stats such as distance to goal and average speed. The frequency at which it prints information can be set by the user.
+\item A launch file that starts the whole simulation and sets the different parameters needed.
+\end{DoxyItemize}\hypertarget{index_autotoc_md3}{}\doxysection{How to run the program}\label{index_autotoc_md3}
+The whole simulation including the contents of this assignment can be run using the following command after initializing ros ({\itshape roscore}) and compiling the package ({\itshape catkin\+\_\+make})\+:
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{roslaunch assignment\_rt1\_2 assignment.launch rate:=(R) goal\_x:=(GX) goal\_y:=(GY)}
+\end{DoxyCode}
+
+
+The values {\ttfamily (R)}, {\ttfamily (GX)} and {\ttfamily (GY)} are the user input. The launch file is explained later but the {\ttfamily rate} argument has a default value so {\ttfamily rate\+:=(R)} can be omitted.\hypertarget{index_autotoc_md4}{}\doxysection{In-\/depth explanation of the code}\label{index_autotoc_md4}
+Every cpp file is adecuately commented to understand what is being done but here we provide a more detailed explanation and the motive behind every decision.\hypertarget{index_autotoc_md5}{}\doxysubsection{Node A (move\+\_\+to\+\_\+goal.\+cpp)}\label{index_autotoc_md5}
+Setting the goal is easy and can be done just by passing the goal position as argument to the function ({\itshape argv}). This can be parsed and sent to the action server. However, we also must be able to cancel the goal at any time, which means that we need to check for user input periodically. We must also publish the custom message with the given rate.\hypertarget{index_autotoc_md6}{}\doxysubsubsection{$<$strong$>$\+Pseudocode$<$/strong$>$}\label{index_autotoc_md6}
+The basic pseudocode for node A can be the following\+:
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{goal, rate = parse arguments}
+\DoxyCodeLine{send goal to action server}
+\DoxyCodeLine{}
+\DoxyCodeLine{while action is not finished:}
+\DoxyCodeLine{    if there is user input to cancel goal:}
+\DoxyCodeLine{        cancel goal}
+\DoxyCodeLine{        break loop}
+\DoxyCodeLine{    check for callbacks ("/odom")}
+\DoxyCodeLine{    publish custom message}
+\DoxyCodeLine{    sleep at the given rate}
+\end{DoxyCode}
+
+
+Our code is a little different in the sense that it cycles itself after finishing to allow the user to input a new goal, so in reality, this pseudocode would be inside a loop.\hypertarget{index_autotoc_md7}{}\doxysubsubsection{$<$strong$>$\+Argument parsing$<$/strong$>$}\label{index_autotoc_md7}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{\textcolor{keywordtype}{double} \mbox{\hyperlink{robot__status_8cpp_ac0df33c619e3c146b6f892ec65219336}{goal\_x}}, \mbox{\hyperlink{robot__status_8cpp_a86a424410ae6b4f43baca838da5f993b}{goal\_y}};}
+\DoxyCodeLine{ros::Rate *r;}
+\DoxyCodeLine{}
+\DoxyCodeLine{\textcolor{comment}{// Check number of arguments}}
+\DoxyCodeLine{\textcolor{keywordflow}{if} (argc == 4) \{}
+\DoxyCodeLine{    r = \textcolor{keyword}{new} ros::Rate(atof(argv[1]));}
+\DoxyCodeLine{    \mbox{\hyperlink{robot__status_8cpp_ac0df33c619e3c146b6f892ec65219336}{goal\_x}} = atof(argv[2]);}
+\DoxyCodeLine{    \mbox{\hyperlink{robot__status_8cpp_a86a424410ae6b4f43baca838da5f993b}{goal\_y}} = atof(argv[3]);}
+\DoxyCodeLine{\} \textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (argc == 3) \{}
+\DoxyCodeLine{    r = \textcolor{keyword}{new} ros::Rate(5);}
+\DoxyCodeLine{    \mbox{\hyperlink{robot__status_8cpp_ac0df33c619e3c146b6f892ec65219336}{goal\_x}} = atof(argv[1]);}
+\DoxyCodeLine{    \mbox{\hyperlink{robot__status_8cpp_a86a424410ae6b4f43baca838da5f993b}{goal\_y}} = atof(argv[2]);}
+\DoxyCodeLine{\} \textcolor{keywordflow}{else} \{}
+\DoxyCodeLine{    ROS\_INFO(\textcolor{stringliteral}{"Wrong number of arguments: (Rate) (goal\_x goal\_y). Starting with default values (5) (2, -\/5)."});}
+\DoxyCodeLine{    r = \textcolor{keyword}{new} ros::Rate(5);}
+\DoxyCodeLine{    \mbox{\hyperlink{robot__status_8cpp_ac0df33c619e3c146b6f892ec65219336}{goal\_x}} = 2.0;}
+\DoxyCodeLine{    \mbox{\hyperlink{robot__status_8cpp_a86a424410ae6b4f43baca838da5f993b}{goal\_y}} = -\/5.0;}
+\DoxyCodeLine{\}}
+\end{DoxyCode}
+
+
+As we can see in the code, it was designed to be able to run with different parameters. It can run with all three parameters given. The rate can be omitted, in which case the default rate of 5 Hz will be used. In any other case the arguments are considered to be incomplete, in which case a warning message is given and the node is executed with some default values.
+
+This is not really useful for the complete execution of the assignment (using the launch file) since it will always have the three arguments, else the launch itself fails. Nevertheless, it is useful when the node is run manually.\hypertarget{index_autotoc_md8}{}\doxysubsubsection{$<$strong$>$\+Checking user input$<$/strong$>$}\label{index_autotoc_md8}
+An easy way to check for user input in non-\/blocking mode is using a {\ttfamily select} with zero timeout.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{\textcolor{comment}{// Variables for select()}}
+\DoxyCodeLine{fd\_set rfds;}
+\DoxyCodeLine{\textcolor{keywordtype}{int} retval;}
+\DoxyCodeLine{std::string cmd;}
+\DoxyCodeLine{\textcolor{keyword}{struct }timeval tv = \{0, 0\};}
+\DoxyCodeLine{}
+\DoxyCodeLine{\textcolor{comment}{// Create the set of read fds:}}
+\DoxyCodeLine{FD\_ZERO(\&rfds);}
+\DoxyCodeLine{FD\_SET(STDIN\_FILENO, \&rfds);}
+\DoxyCodeLine{}
+\DoxyCodeLine{retval = select(STDIN\_FILENO+1, \&rfds, NULL, NULL, \&tv);}
+\DoxyCodeLine{\textcolor{keywordflow}{if} (retval < 0 \&\& errno != EINTR) \{}
+\DoxyCodeLine{    std::cerr << \textcolor{stringliteral}{"Error in select: "} << strerror(errno) << \textcolor{stringliteral}{"\(\backslash\)n"};}
+\DoxyCodeLine{    \textcolor{keywordflow}{break};}
+\DoxyCodeLine{\}}
+\DoxyCodeLine{\textcolor{keywordflow}{else} \textcolor{keywordflow}{if} (retval) \{}
+\DoxyCodeLine{    std::cin >> cmd;}
+\DoxyCodeLine{    \textcolor{keywordflow}{if} (cmd == \textcolor{stringliteral}{"q"}) \{}
+\DoxyCodeLine{        \textcolor{comment}{// Cancel goal}}
+\DoxyCodeLine{        ac.cancelGoal();}
+\DoxyCodeLine{        ROS\_INFO(\textcolor{stringliteral}{"Goal cancelled."});}
+\DoxyCodeLine{        \textcolor{comment}{// Change param}}
+\DoxyCodeLine{        \textcolor{keywordtype}{int} gc;}
+\DoxyCodeLine{        \mbox{\hyperlink{goals__status_8cpp_a898856750d65dc6e6706ea4772115d04}{nh}}.getParam(\textcolor{stringliteral}{"/goals\_cancelled"}, gc);}
+\DoxyCodeLine{        \mbox{\hyperlink{goals__status_8cpp_a898856750d65dc6e6706ea4772115d04}{nh}}.setParam(\textcolor{stringliteral}{"/goals\_cancelled"}, gc + 1);}
+\DoxyCodeLine{        \textcolor{keywordflow}{break};}
+\DoxyCodeLine{    \}}
+\DoxyCodeLine{\}}
+\end{DoxyCode}
+
+
+As we can see, we only read from the input ({\ttfamily cin}) if there is something available to read, and in this case, if that is the letter \textquotesingle{}q\textquotesingle{} we cancel the goal (which is explained later).\hypertarget{index_autotoc_md9}{}\doxysubsubsection{$<$strong$>$\+Main loop$<$/strong$>$}\label{index_autotoc_md9}
+The main loop is where we continuosly check for user input as explained, check for messages from {\ttfamily \char`\"{}/odom\char`\"{}}, and publish the custom message. The loop runs until the robot reaches the goal, ros is shutdown or the goal is cancelled ({\ttfamily break} in the previous code).
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{\textcolor{keywordtype}{bool} finished = ac.waitForResult(r-\/>expectedCycleTime());}
+\DoxyCodeLine{}
+\DoxyCodeLine{\textcolor{keywordflow}{while} (!finished \&\& ros::ok()) \{ }
+\DoxyCodeLine{    ...}
+\DoxyCodeLine{    finished = ac.waitForResult(r-\/>expectedCycleTime());}
+\DoxyCodeLine{\}}
+\end{DoxyCode}
+
+
+We take advantage of the function {\ttfamily wait\+For\+Result}, which can take as argument a duration to wait for, to make the program sleep for the given rate.\hypertarget{index_autotoc_md10}{}\doxysubsubsection{$<$strong$>$\+Publisher and subscriber$<$/strong$>$}\label{index_autotoc_md10}
+To obtain the information about the robot such as position and velocity we use the information published in the topic {\ttfamily \char`\"{}/odom\char`\"{}} through the callback function {\ttfamily get\+\_\+status}\+:
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{\textcolor{keywordtype}{float} \mbox{\hyperlink{move__to__goal_8cpp_ad0da36b2558901e21e7a30f6c227a45e}{x}}, \mbox{\hyperlink{move__to__goal_8cpp_aa4f0d3eebc3c443f9be81bf48561a217}{y}}, \mbox{\hyperlink{move__to__goal_8cpp_a4b312b3530217eb51cbad6e930610f6b}{vel\_x}}, \mbox{\hyperlink{move__to__goal_8cpp_a1dd0876197a1e2dba35d41d6a6d9eab4}{vel\_y}};}
+\DoxyCodeLine{}
+\DoxyCodeLine{\textcolor{keywordtype}{void} \mbox{\hyperlink{move__to__goal_8cpp_a6067cf186c9a69519cbd89482fd7874d}{get\_status}}(\textcolor{keyword}{const} nav\_msgs::Odometry::ConstPtr \&msg) \{}
+\DoxyCodeLine{    \mbox{\hyperlink{move__to__goal_8cpp_ad0da36b2558901e21e7a30f6c227a45e}{x}} = (float) msg-\/>pose.pose.position.x;}
+\DoxyCodeLine{    \mbox{\hyperlink{move__to__goal_8cpp_aa4f0d3eebc3c443f9be81bf48561a217}{y}} = (\textcolor{keywordtype}{float}) msg-\/>pose.pose.position.y;}
+\DoxyCodeLine{    \mbox{\hyperlink{move__to__goal_8cpp_a4b312b3530217eb51cbad6e930610f6b}{vel\_x}} = (float) msg-\/>twist.twist.linear.x;}
+\DoxyCodeLine{    \mbox{\hyperlink{move__to__goal_8cpp_a1dd0876197a1e2dba35d41d6a6d9eab4}{vel\_y}} = (\textcolor{keywordtype}{float}) msg-\/>twist.twist.linear.y;}
+\DoxyCodeLine{\}}
+\end{DoxyCode}
+
+
+To publish the information we need to node C, we use the custom message defined in the {\itshape msg} folder, {\ttfamily Robot\+Status.\+msg}\+:
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{float32 x}
+\DoxyCodeLine{float32 y}
+\DoxyCodeLine{float32 vel\_x}
+\DoxyCodeLine{float32 vel\_y}
+\DoxyCodeLine{float32 goal\_x}
+\DoxyCodeLine{float32 goal\_y}
+\end{DoxyCode}
+
+
+
+\begin{DoxyItemize}
+\item Notice that we also send the goal position as part of the message. The reason why is explained in \href{\#node-c-robot_statuscpp}{\texttt{ node C}}.
+\end{DoxyItemize}
+
+In node A we simply publish this information to the topic {\ttfamily \char`\"{}/robot/status\char`\"{}}\+:
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{\textcolor{comment}{// Publisher:}}
+\DoxyCodeLine{ros::Publisher pub;}
+\DoxyCodeLine{pub = \mbox{\hyperlink{goals__status_8cpp_a898856750d65dc6e6706ea4772115d04}{nh}}.advertise<assignment\_rt1\_2::RobotStatus>(\textcolor{stringliteral}{"/robot/status"}, 1);}
+\DoxyCodeLine{assignment\_rt1\_2::RobotStatus rs;}
+\end{DoxyCode}
+
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{\textcolor{comment}{// Publish status:}}
+\DoxyCodeLine{rs.x = \mbox{\hyperlink{move__to__goal_8cpp_ad0da36b2558901e21e7a30f6c227a45e}{x}};}
+\DoxyCodeLine{rs.y = \mbox{\hyperlink{move__to__goal_8cpp_aa4f0d3eebc3c443f9be81bf48561a217}{y}};}
+\DoxyCodeLine{rs.vel\_x = \mbox{\hyperlink{move__to__goal_8cpp_a4b312b3530217eb51cbad6e930610f6b}{vel\_x}};}
+\DoxyCodeLine{rs.vel\_y = \mbox{\hyperlink{move__to__goal_8cpp_a1dd0876197a1e2dba35d41d6a6d9eab4}{vel\_y}};}
+\DoxyCodeLine{rs.goal\_x = \mbox{\hyperlink{robot__status_8cpp_ac0df33c619e3c146b6f892ec65219336}{goal\_x}};}
+\DoxyCodeLine{rs.goal\_y = \mbox{\hyperlink{robot__status_8cpp_a86a424410ae6b4f43baca838da5f993b}{goal\_y}};}
+\DoxyCodeLine{pub.publish(rs);}
+\end{DoxyCode}
+\hypertarget{index_autotoc_md11}{}\doxysubsubsection{$<$strong$>$\+Information about the goals$<$/strong$>$}\label{index_autotoc_md11}
+As it is explained in the \href{\#assignment-description}{\texttt{ assignment description}}, node B must have access to the goals both reached and cancelled, information that is only available in the action server or client. That means that we need a way to send information from one node to the other. Since node B is a service server, the usual way to convey this information would be through a {\itshape request}, but for reasons explained later, we have decided to use the {\itshape parameter server}. We can use a {\itshape param} to hold the number of goals reached and another for the goals cancelled. So in both cases, we just read the current value of that {\itshape param} and set it to it plus one\+:
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{\textcolor{comment}{// Change param}}
+\DoxyCodeLine{\textcolor{keywordtype}{int} gc;}
+\DoxyCodeLine{\mbox{\hyperlink{goals__status_8cpp_a898856750d65dc6e6706ea4772115d04}{nh}}.getParam(\textcolor{stringliteral}{"/goals\_cancelled"}, gc);}
+\DoxyCodeLine{\mbox{\hyperlink{goals__status_8cpp_a898856750d65dc6e6706ea4772115d04}{nh}}.setParam(\textcolor{stringliteral}{"/goals\_cancelled"}, gc + 1);}
+\end{DoxyCode}
+\hypertarget{index_autotoc_md12}{}\doxysubsubsection{$<$strong$>$\+Exit routine$<$/strong$>$}\label{index_autotoc_md12}
+Exiting the main loop only occurs, under normal circunstances, after the robot has either reached the goal or it has been cancelled. If the {\ttfamily finished} flag is {\ttfamily true}, the goal has been reached and we change the {\itshape param}\+:
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{\textcolor{keywordflow}{if} (finished) \{}
+\DoxyCodeLine{    ROS\_INFO(\textcolor{stringliteral}{"Goal reached."});}
+\DoxyCodeLine{    \textcolor{comment}{// Change param}}
+\DoxyCodeLine{    \textcolor{keywordtype}{int} gr;}
+\DoxyCodeLine{    \mbox{\hyperlink{goals__status_8cpp_a898856750d65dc6e6706ea4772115d04}{nh}}.getParam(\textcolor{stringliteral}{"/goals\_reached"}, gr);}
+\DoxyCodeLine{    \mbox{\hyperlink{goals__status_8cpp_a898856750d65dc6e6706ea4772115d04}{nh}}.setParam(\textcolor{stringliteral}{"/goals\_reached"}, gr + 1);}
+\DoxyCodeLine{\} }
+\end{DoxyCode}
+
+
+After finishing, the program calls the service of node B to print the goals\+:
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{\textcolor{comment}{// Call goals service}}
+\DoxyCodeLine{ros::ServiceClient client = \mbox{\hyperlink{goals__status_8cpp_a898856750d65dc6e6706ea4772115d04}{nh}}.serviceClient<assignment\_rt1\_2::Goals>(\textcolor{stringliteral}{"/goals"});}
+\DoxyCodeLine{assignment\_rt1\_2::Goals g;}
+\DoxyCodeLine{client.call(g);}
+\end{DoxyCode}
+
+
+As we said in the \href{\#pseudocode}{\texttt{ pseudocode}}, we designed the code to allow the user to input a new goal without exiting the program and having to call it again manually (rosrun ...). To do that, we create an infinite loop that is only broken when the user inputs \char`\"{}e\char`\"{} to exit or \char`\"{}r\char`\"{} to retry. After inputting \char`\"{}r\char`\"{} the user is then prompted to enter the new goal position\+:
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{\textcolor{keywordflow}{while} (\textcolor{keyword}{true}) \{}
+\DoxyCodeLine{    std::cout << \textcolor{stringliteral}{"Program finished. Write 'r' to retry with another goal or 'e' to exit:"} << std::endl;}
+\DoxyCodeLine{    std::string buf;}
+\DoxyCodeLine{    std::cin >> buf;}
+\DoxyCodeLine{    \textcolor{keywordflow}{if} (buf == \textcolor{stringliteral}{"e"} || buf == \textcolor{stringliteral}{"E"}) \textcolor{keywordflow}{break};}
+\DoxyCodeLine{    \textcolor{keywordflow}{if} (buf == \textcolor{stringliteral}{"r"} || buf == \textcolor{stringliteral}{"R"}) \{}
+\DoxyCodeLine{        std::cout << \textcolor{stringliteral}{"Enter new goal\_x:"} << std::endl;}
+\DoxyCodeLine{        std::cin >> buf;}
+\DoxyCodeLine{        \mbox{\hyperlink{robot__status_8cpp_ac0df33c619e3c146b6f892ec65219336}{goal\_x}} = atof(buf.c\_str());}
+\DoxyCodeLine{        std::cout << \textcolor{stringliteral}{"Enter new goal\_y:"} << std::endl;}
+\DoxyCodeLine{        std::cin >> buf;}
+\DoxyCodeLine{        \mbox{\hyperlink{robot__status_8cpp_a86a424410ae6b4f43baca838da5f993b}{goal\_y}} = atof(buf.c\_str());}
+\DoxyCodeLine{        \textcolor{keywordflow}{goto} cycle;}
+\DoxyCodeLine{    \}}
+\DoxyCodeLine{\}}
+\end{DoxyCode}
+
+
+We make use of the {\ttfamily goto} function and the label {\ttfamily cycle} to jump to a previous point in the program, just before sending the goal\+:
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{cycle:}
+\DoxyCodeLine{}
+\DoxyCodeLine{goal.target\_pose.pose.position.x = \mbox{\hyperlink{robot__status_8cpp_ac0df33c619e3c146b6f892ec65219336}{goal\_x}};}
+\DoxyCodeLine{goal.target\_pose.pose.position.y = \mbox{\hyperlink{robot__status_8cpp_a86a424410ae6b4f43baca838da5f993b}{goal\_y}};}
+\DoxyCodeLine{ac.sendGoal(goal);}
+\DoxyCodeLine{ROS\_INFO(\textcolor{stringliteral}{"Goal sent, press q to cancel task."});}
+\end{DoxyCode}
+\hypertarget{index_autotoc_md13}{}\doxysubsection{Node B (goals\+\_\+status.\+cpp)}\label{index_autotoc_md13}
+As we explained in \href{\#node-a-move_to_goalcpp}{\texttt{ node A}}, we use {\itshape params} to save the amount of goals reached and cancelled to the {\itshape parameter server}. The node then creates the service server {\ttfamily \char`\"{}/goals\char`\"{}} and waits infinitely for calls\+:
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{\textcolor{comment}{// Service server:}}
+\DoxyCodeLine{ros::ServiceServer ss = (*nh).advertiseService(\textcolor{stringliteral}{"/goals"}, \mbox{\hyperlink{goals__status_8cpp_a142ca2bd3a36c5ef03781797f4a2cd11}{get\_goals}});}
+\DoxyCodeLine{}
+\DoxyCodeLine{ROS\_INFO(\textcolor{stringliteral}{"Service server initialized."});}
+\DoxyCodeLine{}
+\DoxyCodeLine{ros::spin();}
+\end{DoxyCode}
+
+
+The callback function {\ttfamily get\+\_\+goals} just gets the {\itshape params} from the {\itshape parameter server} and prints them\+:
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{\textcolor{keywordtype}{bool} \mbox{\hyperlink{goals__status_8cpp_a142ca2bd3a36c5ef03781797f4a2cd11}{get\_goals}}(assignment\_rt1\_2::Goals::Request \&req, assignment\_rt1\_2::Goals::Response \&res) \{}
+\DoxyCodeLine{    \textcolor{keywordtype}{int} gr, gc;}
+\DoxyCodeLine{    \textcolor{keywordflow}{if} (!(*nh).getParam(\textcolor{stringliteral}{"/goals\_reached"}, gr)) \{}
+\DoxyCodeLine{        ROS\_INFO(\textcolor{stringliteral}{"Could not retrieve param /goals\_succeeded."});}
+\DoxyCodeLine{        \textcolor{keywordflow}{return} \textcolor{keyword}{false};   }
+\DoxyCodeLine{    \}    }
+\DoxyCodeLine{    \textcolor{keywordflow}{if} (!(*nh).getParam(\textcolor{stringliteral}{"/goals\_cancelled"}, gc)) \{}
+\DoxyCodeLine{        ROS\_INFO(\textcolor{stringliteral}{"Could not retrieve param /goals\_cancelled."});}
+\DoxyCodeLine{        \textcolor{keywordflow}{return} \textcolor{keyword}{false}; }
+\DoxyCodeLine{    \}}
+\DoxyCodeLine{}
+\DoxyCodeLine{    std::cout << \textcolor{stringliteral}{"Goals reached: "} << gr << std::endl;}
+\DoxyCodeLine{    std::cout << \textcolor{stringliteral}{"Goals cancelled: "} << gc << std::endl;}
+\DoxyCodeLine{    std::cout << \textcolor{stringliteral}{"-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/"} << std::endl;}
+\DoxyCodeLine{    \textcolor{keywordflow}{return} \textcolor{keyword}{true};}
+\DoxyCodeLine{\}}
+\end{DoxyCode}
+
+
+Because the service just prints {\itshape params}, there is no need for a {\ttfamily request} or {\ttfamily response}. As such, the service {\ttfamily Goals.\+srv} defined in the {\itshape srv} folder is just an empty service\+:
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{-\/-\/-\/}
+\end{DoxyCode}
+\hypertarget{index_autotoc_md14}{}\doxysubsubsection{$<$strong$>$\+Other possible approaches$<$/strong$>$}\label{index_autotoc_md14}
+The whole reason behind using the {\itshape parameter server} to hold the goals reached and cancelled is because we only have access to that information while the action client (node A) is running. We could suppose that node A will be run continuously, i.\+e. that the user will always use the retry functionality of the program, in which case we could have local variables counting the number of goals reached and cancelled and send them as part of the request like this\+:
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{int goals\_reached}
+\DoxyCodeLine{int goals\_cancelled}
+\DoxyCodeLine{-\/-\/-\/}
+\end{DoxyCode}
+
+
+That approach however, would not allow for manual calls of the service since the user would need to know the amount before. A better approach would be to have the local counting variables in node B and node A just sends a {\ttfamily bool} variable of whether the goal has been cancelled or not (reached) as part of the request\+:
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{bool cancelled}
+\DoxyCodeLine{-\/-\/-\/}
+\end{DoxyCode}
+
+
+That would work fine for manual calls, although we would need to send as part of the request whether the last goal was cancelled or not. The important part is that it would work even if node A is closed and opened again, which was our initial concern. However, if the service server (node B) is closed and opened again, the goals will be reset. Without modifying the action server, the only way to save the goals since the beggining of the simulation regardless of whether node A or B have been closed, is through the {\itshape parameter server}.\hypertarget{index_autotoc_md15}{}\doxysubsection{Node C (robot\+\_\+status.\+cpp)}\label{index_autotoc_md15}
+This node reads information published by node A to print different stats about the robot.\hypertarget{index_autotoc_md16}{}\doxysubsubsection{$<$strong$>$\+Argument parsing$<$/strong$>$}\label{index_autotoc_md16}
+Node C only takes as argument the rate at which it prints information\+:
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{\textcolor{comment}{// Check arguments for rate:}}
+\DoxyCodeLine{ros::Rate *r;}
+\DoxyCodeLine{}
+\DoxyCodeLine{\textcolor{keywordflow}{if} (argc == 2) \{}
+\DoxyCodeLine{    r = \textcolor{keyword}{new} ros::Rate((\textcolor{keywordtype}{double}) atof(argv[1]));}
+\DoxyCodeLine{\} \textcolor{keywordflow}{else} \{}
+\DoxyCodeLine{    ROS\_INFO(\textcolor{stringliteral}{"Wrong number of arguments: (Rate)."});}
+\DoxyCodeLine{    exit(1);}
+\DoxyCodeLine{\}}
+\end{DoxyCode}
+\hypertarget{index_autotoc_md17}{}\doxysubsubsection{$<$strong$>$\+Callback function$<$/strong$>$}\label{index_autotoc_md17}
+The whole behaviour of this node is governed by its callback function. The only thing that this node does is check for messages published by node A and use the callback function\+:
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{\textcolor{keywordflow}{while}(ros::ok()) \{}
+\DoxyCodeLine{        }
+\DoxyCodeLine{    \textcolor{comment}{// Check for callbacks:}}
+\DoxyCodeLine{    ros::spinOnce();}
+\DoxyCodeLine{}
+\DoxyCodeLine{    \textcolor{comment}{// Sleep at the given rate:}}
+\DoxyCodeLine{    r-\/>sleep();}
+\DoxyCodeLine{\}}
+\end{DoxyCode}
+
+
+
+\begin{DoxyItemize}
+\item {\bfseries{Note\+:}} Instead of using {\ttfamily ros\+::spin()} as in node B, we use {\ttfamily ros\+::spin\+Once()} so that we can sleep manually at the given rate.
+\end{DoxyItemize}
+
+The callback function is divided in two parts\+: the proper callback function and an auxiliary function that only prints the stats. The callback function {\ttfamily get\+\_\+status} takes the contents of the custom message and saves it in gloabal variables\+:
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{\textcolor{keywordtype}{float} \mbox{\hyperlink{move__to__goal_8cpp_ad0da36b2558901e21e7a30f6c227a45e}{x}}, \mbox{\hyperlink{move__to__goal_8cpp_aa4f0d3eebc3c443f9be81bf48561a217}{y}}, \mbox{\hyperlink{move__to__goal_8cpp_a4b312b3530217eb51cbad6e930610f6b}{vel\_x}}, \mbox{\hyperlink{move__to__goal_8cpp_a1dd0876197a1e2dba35d41d6a6d9eab4}{vel\_y}}, \mbox{\hyperlink{robot__status_8cpp_ac0df33c619e3c146b6f892ec65219336}{goal\_x}} = 0, \mbox{\hyperlink{robot__status_8cpp_a86a424410ae6b4f43baca838da5f993b}{goal\_y}} = 0;}
+\DoxyCodeLine{\textcolor{keywordtype}{int} \mbox{\hyperlink{robot__status_8cpp_a4e1e0e72dd773439e333c84dd762a9c3}{c}} = 0;}
+\DoxyCodeLine{\textcolor{keywordtype}{float} \mbox{\hyperlink{robot__status_8cpp_ab8c50d62f205e59cf3c02db744e2bf86}{acc\_vx}} = 0, \mbox{\hyperlink{robot__status_8cpp_a49e8ddc680bdec2d0944af604628b5df}{acc\_vy}} = 0;}
+\DoxyCodeLine{}
+\DoxyCodeLine{\textcolor{keywordtype}{void} \mbox{\hyperlink{move__to__goal_8cpp_a6067cf186c9a69519cbd89482fd7874d}{get\_status}}(\textcolor{keyword}{const} assignment\_rt1\_2::RobotStatus::ConstPtr \&msg) \{}
+\DoxyCodeLine{    \textcolor{comment}{// Check if goal changed:}}
+\DoxyCodeLine{    \textcolor{keywordtype}{float} eps = 1e-\/3; \textcolor{comment}{// Threshold for the goal change}}
+\DoxyCodeLine{    \textcolor{keywordflow}{if} (std::abs(msg-\/>goal\_x -\/ \mbox{\hyperlink{robot__status_8cpp_ac0df33c619e3c146b6f892ec65219336}{goal\_x}}) > eps || std::abs(msg-\/>goal\_y -\/ \mbox{\hyperlink{robot__status_8cpp_a86a424410ae6b4f43baca838da5f993b}{goal\_y}}) > eps) \{}
+\DoxyCodeLine{        ROS\_INFO(\textcolor{stringliteral}{"Goal change detected, resetting stats."});}
+\DoxyCodeLine{        \mbox{\hyperlink{robot__status_8cpp_ac0df33c619e3c146b6f892ec65219336}{goal\_x}} = msg-\/>goal\_x;}
+\DoxyCodeLine{        \mbox{\hyperlink{robot__status_8cpp_a86a424410ae6b4f43baca838da5f993b}{goal\_y}} = msg-\/>goal\_y;}
+\DoxyCodeLine{        \mbox{\hyperlink{robot__status_8cpp_ab8c50d62f205e59cf3c02db744e2bf86}{acc\_vx}} = 0;}
+\DoxyCodeLine{        \mbox{\hyperlink{robot__status_8cpp_a49e8ddc680bdec2d0944af604628b5df}{acc\_vy}} = 0;}
+\DoxyCodeLine{    \}}
+\DoxyCodeLine{    \textcolor{comment}{// Copy parameters from the message:}}
+\DoxyCodeLine{    \mbox{\hyperlink{move__to__goal_8cpp_ad0da36b2558901e21e7a30f6c227a45e}{x}} = msg-\/>x;}
+\DoxyCodeLine{    \mbox{\hyperlink{move__to__goal_8cpp_aa4f0d3eebc3c443f9be81bf48561a217}{y}} = msg-\/>y;}
+\DoxyCodeLine{    \mbox{\hyperlink{move__to__goal_8cpp_a4b312b3530217eb51cbad6e930610f6b}{vel\_x}} = msg-\/>vel\_x;}
+\DoxyCodeLine{    \mbox{\hyperlink{move__to__goal_8cpp_a1dd0876197a1e2dba35d41d6a6d9eab4}{vel\_y}} = msg-\/>vel\_y;}
+\DoxyCodeLine{    \mbox{\hyperlink{robot__status_8cpp_ab8c50d62f205e59cf3c02db744e2bf86}{acc\_vx}} += std::abs(\mbox{\hyperlink{move__to__goal_8cpp_a4b312b3530217eb51cbad6e930610f6b}{vel\_x}});}
+\DoxyCodeLine{    \mbox{\hyperlink{robot__status_8cpp_a49e8ddc680bdec2d0944af604628b5df}{acc\_vy}} += std::abs(\mbox{\hyperlink{move__to__goal_8cpp_a1dd0876197a1e2dba35d41d6a6d9eab4}{vel\_y}});}
+\DoxyCodeLine{    \mbox{\hyperlink{robot__status_8cpp_a4e1e0e72dd773439e333c84dd762a9c3}{c}}++;}
+\DoxyCodeLine{    \mbox{\hyperlink{robot__status_8cpp_a92cf1cbd2985da1104d70aa3f4d241e0}{print\_msg}}();}
+\DoxyCodeLine{\}}
+\end{DoxyCode}
+
+
+The reason why we also send the goal position in the custom message is to be able to detect if the goal has changed and reset the stats, in this case, the average velocity must be reset. Of course, another reason is that we need access to the goal position to compute the distance from the robot to the goal. This way, the node can be run continuously.
+
+Another aspect is that instead of saving every previous velocity in an array, we just save their absolute cumulative sum ({\ttfamily acc\+\_\+vx}, {\ttfamily acc\+\_\+vy}) and the number of callbacks ({\ttfamily c}) so that the average speed in either component can be computed as {\ttfamily acc} / {\ttfamily c}.
+
+The function {\ttfamily print\+\_\+msg} that is called at the end of the callback function is the one that computes and prints all the information\+:
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{\textcolor{keywordtype}{void} \mbox{\hyperlink{robot__status_8cpp_a92cf1cbd2985da1104d70aa3f4d241e0}{print\_msg}}() \{}
+\DoxyCodeLine{    std::cout << \textcolor{stringliteral}{"ROBOT STATUS:"} << std::endl;}
+\DoxyCodeLine{    std::cout << \textcolor{stringliteral}{"x = "} << \mbox{\hyperlink{move__to__goal_8cpp_ad0da36b2558901e21e7a30f6c227a45e}{x}} << std::endl;}
+\DoxyCodeLine{    std::cout << \textcolor{stringliteral}{"y = "} << \mbox{\hyperlink{move__to__goal_8cpp_aa4f0d3eebc3c443f9be81bf48561a217}{y}} << std::endl;}
+\DoxyCodeLine{    std::cout << \textcolor{stringliteral}{"vel\_x = "} << \mbox{\hyperlink{move__to__goal_8cpp_a4b312b3530217eb51cbad6e930610f6b}{vel\_x}} << std::endl;}
+\DoxyCodeLine{    std::cout << \textcolor{stringliteral}{"vel\_y = "} << \mbox{\hyperlink{move__to__goal_8cpp_a1dd0876197a1e2dba35d41d6a6d9eab4}{vel\_y}} << std::endl;}
+\DoxyCodeLine{    std::cout << \textcolor{stringliteral}{"======================================================"} << std::endl;}
+\DoxyCodeLine{    std::cout << \textcolor{stringliteral}{"ADVANCED STATUS:"} << std::endl;}
+\DoxyCodeLine{    std::cout << \textcolor{stringliteral}{"Distance to goal: "} << std::sqrt((\mbox{\hyperlink{robot__status_8cpp_ac0df33c619e3c146b6f892ec65219336}{goal\_x}} -\/ \mbox{\hyperlink{move__to__goal_8cpp_ad0da36b2558901e21e7a30f6c227a45e}{x}})*(\mbox{\hyperlink{robot__status_8cpp_ac0df33c619e3c146b6f892ec65219336}{goal\_x}} -\/ \mbox{\hyperlink{move__to__goal_8cpp_ad0da36b2558901e21e7a30f6c227a45e}{x}}) + (\mbox{\hyperlink{robot__status_8cpp_a86a424410ae6b4f43baca838da5f993b}{goal\_y}} -\/ \mbox{\hyperlink{move__to__goal_8cpp_aa4f0d3eebc3c443f9be81bf48561a217}{y}})*(\mbox{\hyperlink{robot__status_8cpp_a86a424410ae6b4f43baca838da5f993b}{goal\_y}} -\/ \mbox{\hyperlink{move__to__goal_8cpp_aa4f0d3eebc3c443f9be81bf48561a217}{y}})) << std::endl;}
+\DoxyCodeLine{    \textcolor{keywordtype}{float} av\_x = \mbox{\hyperlink{robot__status_8cpp_ab8c50d62f205e59cf3c02db744e2bf86}{acc\_vx}} / \mbox{\hyperlink{robot__status_8cpp_a4e1e0e72dd773439e333c84dd762a9c3}{c}};}
+\DoxyCodeLine{    \textcolor{keywordtype}{float} av\_y = \mbox{\hyperlink{robot__status_8cpp_a49e8ddc680bdec2d0944af604628b5df}{acc\_vy}} / \mbox{\hyperlink{robot__status_8cpp_a4e1e0e72dd773439e333c84dd762a9c3}{c}}; }
+\DoxyCodeLine{    std::cout << \textcolor{stringliteral}{"Average speed in x: "} << av\_x << std::endl;}
+\DoxyCodeLine{    std::cout << \textcolor{stringliteral}{"Average speed in y: "} << av\_y << std::endl;}
+\DoxyCodeLine{    std::cout << \textcolor{stringliteral}{"Average speed: "} << std::sqrt(av\_x*av\_x + av\_y*av\_y) << std::endl;}
+\DoxyCodeLine{    std::cout << \textcolor{stringliteral}{"======================================================"} << std::endl;}
+\DoxyCodeLine{    std::cout << \textcolor{stringliteral}{"-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/"} << std::endl;}
+\DoxyCodeLine{    std::cout << \textcolor{stringliteral}{"======================================================"} << std::endl;}
+\DoxyCodeLine{\}}
+\end{DoxyCode}
+
+
+An interesting fact is that regardless of where the goal is, more than 90\% of the speed is in the {\itshape x} direction, even if the path is a straight line parallel to the Y-\/axis. The only reasonable explanation for this behaviour is that the information published in the topic {\ttfamily \char`\"{}/odom\char`\"{}} regarding the velocity of the robot ({\ttfamily Twist}) is given with respect to the local frame of reference of the robot. Which would make sense since the robot always moves forward and rotates about its axis to make a turn.\hypertarget{index_autotoc_md18}{}\doxysubsection{Launch file}\label{index_autotoc_md18}
+As stated in the section \href{\#how-to-run-the-program}{\texttt{ How to run the program}}, we provide the launch file {\ttfamily assignment.\+launch} in the {\itshape launch} folder to start up the whole simulation, including the nodes in the \href{https://github.com/CarmineD8/assignment_2_2022}{\texttt{ base package}}.
+
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{<\textcolor{keywordtype}{launch}>}
+\DoxyCodeLine{    <\textcolor{keywordtype}{include} \textcolor{keyword}{file}=\textcolor{stringliteral}{"\$(find assignment\_2\_2022)/launch/assignment1.launch"} />}
+\DoxyCodeLine{    <\textcolor{keywordtype}{arg} \textcolor{keyword}{name}=\textcolor{stringliteral}{"rate"} \textcolor{keyword}{default}=\textcolor{stringliteral}{"2"} />}
+\DoxyCodeLine{    <\textcolor{keywordtype}{arg} \textcolor{keyword}{name}=\textcolor{stringliteral}{"goal\_x"} />}
+\DoxyCodeLine{    <\textcolor{keywordtype}{arg} \textcolor{keyword}{name}=\textcolor{stringliteral}{"goal\_y"} />}
+\DoxyCodeLine{    <\textcolor{keywordtype}{param} \textcolor{keyword}{name}=\textcolor{stringliteral}{"/goals\_reached"} \textcolor{keyword}{value}=\textcolor{stringliteral}{"0"} \textcolor{keyword}{type}=\textcolor{stringliteral}{"int"}/>}
+\DoxyCodeLine{    <\textcolor{keywordtype}{param} \textcolor{keyword}{name}=\textcolor{stringliteral}{"/goals\_cancelled"} \textcolor{keyword}{value}=\textcolor{stringliteral}{"0"} \textcolor{keyword}{type}=\textcolor{stringliteral}{"int"}/>}
+\DoxyCodeLine{    <\textcolor{keywordtype}{node} \textcolor{keyword}{pkg}=\textcolor{stringliteral}{"assignment\_rt1\_2"} \textcolor{keyword}{type}=\textcolor{stringliteral}{"set\_goal\_node"} \textcolor{keyword}{name}=\textcolor{stringliteral}{"set\_goal\_node"} \textcolor{keyword}{output}=\textcolor{stringliteral}{"screen"} \textcolor{keyword}{launch-\/prefix}=\textcolor{stringliteral}{"terminator -\/x"} \textcolor{keyword}{args}=\textcolor{stringliteral}{"\$(arg rate) \$(arg goal\_x) \$(arg goal\_y)"} />}
+\DoxyCodeLine{    <\textcolor{keywordtype}{node} \textcolor{keyword}{pkg}=\textcolor{stringliteral}{"assignment\_rt1\_2"} \textcolor{keyword}{type}=\textcolor{stringliteral}{"robot\_status\_node"} \textcolor{keyword}{name}=\textcolor{stringliteral}{"robot\_status\_node"} \textcolor{keyword}{output}=\textcolor{stringliteral}{"screen"} \textcolor{keyword}{launch-\/prefix}=\textcolor{stringliteral}{"terminator -\/x"} \textcolor{keyword}{args}=\textcolor{stringliteral}{"\$(arg rate)"} />}
+\DoxyCodeLine{    <\textcolor{keywordtype}{node} \textcolor{keyword}{pkg}=\textcolor{stringliteral}{"assignment\_rt1\_2"} \textcolor{keyword}{type}=\textcolor{stringliteral}{"goals\_status\_node"} \textcolor{keyword}{name}=\textcolor{stringliteral}{"goals\_status\_node"} \textcolor{keyword}{output}=\textcolor{stringliteral}{"screen"} \textcolor{keyword}{launch-\/prefix}=\textcolor{stringliteral}{"terminator -\/x"} />}
+\DoxyCodeLine{</\textcolor{keywordtype}{launch}>}
+\end{DoxyCode}
+
+
+As we can see, the first line launches the launch file provided in the \href{https://github.com/CarmineD8/assignment_2_2022}{\texttt{ base package}}. Then we define the arguments that the launch file takes\+: {\ttfamily rate}, {\ttfamily goal\+\_\+x} and {\ttfamily goal\+\_\+y}. We decided to provide a default value of 2 Hz to the {\ttfamily rate} so that it can be omitted. Then, we define and set the {\itshape params} {\ttfamily \char`\"{}/goals\+\_\+reached\char`\"{}} and {\ttfamily \char`\"{}/goals\+\_\+cancelled\char`\"{}} to zero. Finally, we just initialize each node (A, B and C) with the corresponding arguments in a new terminal using the option {\ttfamily launch-\/prefix}.
+
+
+\begin{DoxyItemize}
+\item {\bfseries{Note\+:}} We use {\itshape terminator} terminals to launch the nodes, it can be installed using the command {\ttfamily sudo apt install terminator}. Nevertheless, the terminal used to launch the nodes can also be changed manually, for instance, \char`\"{}terminator -\/x\char`\"{} can be substituted by \char`\"{}gnome-\/terminal -\/x\char`\"{}, \char`\"{}konsole -\/e\char`\"{}, \char`\"{}xterm -\/e\char`\"{} or whatever other terminal. However, in our {\itshape W\+SL} system with Ubuntu 20.\+04, {\itshape konsole} terminal crashes nodes A and C for a reason we have not been able to determine.
+\end{DoxyItemize}\hypertarget{index_autotoc_md19}{}\doxysection{Improvements}\label{index_autotoc_md19}
+
+\begin{DoxyItemize}
+\item {\bfseries{Error handling\+:}} There is very few error checking and handling in the code, which is not ideal.
+\item {\bfseries{Wrong input handling\+:}} There are several instances in which the user provide an input to the program and we do not check or handle it properly. For instance, we do not check if the arguments passed ({\ttfamily rate}, {\ttfamily goal\+\_\+x} and {\ttfamily goal\+\_\+y}) are numbers, we just assume they are, which will produce errors when converting it from string to float in the case that they are not numbers. Error that we have not handled. The other instance of wrong input is in the \href{\#exit-routine}{\texttt{ exit routine}} of node A. To retry the user must input the new position of the goal, numbers that we do not check whether they are numbers and would produce the same error as before.
+\item {\bfseries{Proper exiting\+:}} Only node A has a proper exit routine in which the program finishes and returns zero. The other two nodes are run forever and can only be stopped with signals ({\ttfamily S\+I\+G\+I\+NT}, {\ttfamily S\+I\+G\+T\+E\+RM}, etc.). Right now the easiest way is to just close the terminal in which they are initialized, which automatically sends signal {\ttfamily S\+I\+G\+H\+UP} to terminate the node. 
+\end{DoxyItemize}
