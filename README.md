@@ -1,4 +1,6 @@
-# Assignment 2 (RT1) 
+# Assignment 2 (RT1) : Lucas Pardo (s5646719)
+
+[Documentation page.](https://lucas-pardo.github.io/RT_Assignment_2/index.html)
 
 ## Prerequisites
 
