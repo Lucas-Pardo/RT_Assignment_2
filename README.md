@@ -2,6 +2,9 @@
 
 [Documentation page.](https://lucas-pardo.github.io/RT_Assignment_2/index.html)
 
+### Update
+Added node A as jupyter notebook. It uses widgets to interact with the program and also shows all the information that the other two nodes would show.
+
 ## Prerequisites
 
 This assignment is built upon the following [ros package](https://github.com/CarmineD8/assignment_2_2022). This base package implements the [bug 0 algorithm](https://en.wikipedia.org/wiki/Bug_algorithm) as an action server in python and makes use of Rviz and Gazebo to simulate everything. These two pieces of software are included in the full instalation of ROS Noetic. Python 3 must be the default version.
